@@ -1,2 +1,143 @@
 local _G = GLOBAL
 
+local require = _G.require
+
+local TheInput = _G.TheInput
+local ACTIONS = _G.ACTIONS
+local BufferedAction = _G.BufferedAction
+
+local action_prefix = "MOD_ENVIRONMENT_PINGER_"
+local ping_ground_name = action_prefix.."PING"
+local ping_item_name = action_prefix.."PING_ITEM"
+local ping_structure_name = action_prefix.."PING_STRUCTURE"
+local ping_mob_name = action_prefix.."PING_MOB"
+local ping_boss_name = action_prefix.."PING_BOSS"
+local ping_other_name = action_prefix.."PING_OTHER"
+
+local function GetConfig(name)
+    return GetModConfigData(name)
+end
+
+local ping_key = GetConfig("ping_key")
+
+local function ping_ground_fn(act)
+    --print("Ping ground")
+    if act and act.doer then
+       act.doer.components.environmentpinger:Ping("ground",act) 
+    end
+end
+
+local function ping_item_fn(act)
+    --print("Ping item")
+    if act and act.doer then
+       act.doer.components.environmentpinger:Ping("item",act) 
+    end
+end
+
+local function ping_structure_fn(act)
+    --print("Ping structure")
+    if act and act.doer then
+       act.doer.components.environmentpinger:Ping("structure",act) 
+    end
+end
+
+local function ping_mob_fn(act)
+   --print("Ping mob")
+   if act and act.doer then
+       act.doer.components.environmentpinger:Ping("mob",act) 
+    end
+end
+
+local function ping_boss_fn(act)
+    --print("Ping boss")
+    if act and act.doer then
+       act.doer.components.environmentpinger:Ping("boss",act) 
+    end
+end
+
+local function ping_other_fn(act)
+    --print("Ping other")
+    if act and act.doer then
+       act.doer.components.environmentpinger:Ping("other",act) 
+    end
+end
+
+
+AddAction(ping_ground_name,"Ping ground",ping_ground_fn)
+AddAction(ping_item_name,"Ping item",ping_item_fn)
+AddAction(ping_structure_name,"Ping structure",ping_structure_fn)
+AddAction(ping_mob_name,"Ping mob",ping_mob_fn)
+AddAction(ping_boss_name,"Ping boss",ping_boss_fn)
+AddAction(ping_other_name,"Ping",ping_other_fn)
+-- Check for a fire as a valid sub-type in all ping types.
+
+local function PlayerActionPickerPostInit(playeractionpicker,player)
+    if player ~= _G.ThePlayer then
+        return 
+    end
+    
+    local old_DoGetMouseActions = playeractionpicker.DoGetMouseActions
+    playeractionpicker.DoGetMouseActions = function(self,position,target)
+       local lmb, rmb = old_DoGetMouseActions(self,position,target)
+       if TheInput:IsKeyDown(ping_key) then
+           local entity_target = TheInput:GetWorldEntityUnderMouse()
+           local hud_entity = TheInput:GetHUDEntityUnderMouse()
+           
+           if hud_entity then
+               return lmb,rmb
+           end
+           if not entity_target then --Ping the ground or so
+               lmb = BufferedAction(player,nil,ACTIONS[ping_ground_name])
+               return lmb,rmb
+           end
+           
+           if entity_target:HasTag("character") then --Ignore characters.
+               return lmb,rmb
+           end
+           if entity_target:HasTag("epic") then
+              lmb = BufferedAction(player,entity_target,ACTIONS[ping_boss_name])
+          elseif entity_target:HasTag("structure") or entity_target:HasTag("hammer_WORKABLE") then
+              lmb = BufferedAction(player,entity_target,ACTIONS[ping_structure_name])
+          elseif entity_target:HasTag("_health") then
+              lmb = BufferedAction(player,entity_target,ACTIONS[ping_mob_name])
+          elseif entity_target:HasTag("_inventoryitem") then
+              lmb = BufferedAction(player,entity_target,ACTIONS[ping_item_name])
+          else
+              lmb = BufferedAction(player,entity_target,ACTIONS[ping_other_name])
+           end
+       end
+       return lmb,rmb
+    end
+end
+
+local function PlayerControllerPostInit(playercontroller,player)
+    if player ~= _G.ThePlayer then
+        return
+    end
+    _G.ThePlayer:AddComponent("environmentpinger")
+    local old_OnLeftClick = playercontroller.OnLeftClick
+    
+    playercontroller.OnLeftClick = function(self, down, ...)
+        local lmb = self:GetLeftMouseAction()
+       if (not down) and lmb and lmb.action.id and string.match(lmb.action.id,action_prefix) then
+           lmb.action.fn(lmb)
+           return
+       end
+       old_OnLeftClick(self,down, ...)
+    end
+    
+    local old_OnRightClick = playercontroller.OnRightClick
+    
+    playercontroller.OnRightClick = function(self, down, ...)
+        local rmb = self:GetRightMouseAction()
+       if (not down) and rmb and rmb.action.id and string.match(rmb.action.id,action_prefix) then
+           rmb.action.fn(rmb)
+           return
+       end
+       old_OnRightClick(self,down, ...)
+    end
+    
+end--]]
+
+AddComponentPostInit("playeractionpicker",PlayerActionPickerPostInit)
+AddComponentPostInit("playercontroller", PlayerControllerPostInit)
