@@ -137,7 +137,28 @@ local function PlayerControllerPostInit(playercontroller,player)
        old_OnRightClick(self,down, ...)
     end
     
-end--]]
+end
+
+local function PlayerPostInit(player)
+    player:DoTaskInTime(0,function()
+        if player ~= _G.ThePlayer then
+            return
+        end
+        if not player.components.environmentpinger then
+            player:AddComponent("environmentpinger")
+        end
+        if player.HUD then
+            local networkchatqueue = player.HUD.controls.networkchatqueue
+            local old_OnMessageReceived = networkchatqueue.OnMessageReceived
+            networkchatqueue.OnMessageReceived = function(...)
+                player.components.environmentpinger:OnMessageReceived(...)
+                old_OnMessageReceived(...)
+            end
+        end
+    end)
+end
 
 AddComponentPostInit("playeractionpicker",PlayerActionPickerPostInit)
 AddComponentPostInit("playercontroller", PlayerControllerPostInit)
+AddPlayerPostInit(PlayerPostInit)
+
