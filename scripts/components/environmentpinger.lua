@@ -8,8 +8,9 @@ local EnvironmentPinger = Class(function(self,inst)
 
 
 function EnvironmentPinger:OnMessageReceived(chatqueue,name,prefab,message,colour,whisper,profileflair)
-    if string.match(message,STRINGS.LMB.." .+\n{([-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+)}") then
-       print(message) 
+    if string.match(message,STRINGS.LMB.." .+\n{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} %S+") then
+       print(string.match(message,STRINGS.LMB.." .+\n{([-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+)} %S+"))
+       print(string.match(message,STRINGS.LMB.." .+\n{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} (%S+)"))
     end
 end
 
@@ -28,7 +29,7 @@ end
 
 function EnvironmentPinger:HandleBaseMessageInformation(act)
     local target = act.target
-    local pos = target and target:GetPosition()
+    local pos = target and target:GetPosition() or TheInput:GetWorldPosition()
     local pos_message = pos and "\n{"..string.format("%.3f",pos.x)..","..string.format("%.3f",pos.z).."}" or ""
     local message = STRINGS.LMB.." "
     if target then
@@ -54,22 +55,23 @@ local ping_types = {
         local message,pos_message = EnvironmentPinger:HandleBaseMessageInformation(act)
         local ground_messages = pingstrings.ground
         local r_message = ground_messages[math.random(#ground_messages)]
-        TheNet:Say(message..r_message..pos_message)
+        TheNet:Say(message..r_message..pos_message.." ground")
     end,
     ["item"] = function(act)
         local message,pos_message,object_name,stack_size,item_name_many,article = EnvironmentPinger:HandleBaseMessageInformation(act)
         local item_messages = pingstrings.item
         local r_message = item_messages[math.random(#item_messages)]
-        r_message = string.gsub(r_message,"%%S",object_name)
         if stack_size > 1 then
+            r_message = string.gsub(r_message,"%%S",item_name_many)
             r_message = string.gsub(r_message,"this/these","these "..stack_size)
             r_message = string.gsub(r_message,"that/those","those "..stack_size)
         else
+            r_message = string.gsub(r_message,"%%S",object_name)
             r_message = string.gsub(r_message,"this/these","this")
             r_message = string.gsub(r_message,"that/those","that")
         end
         r_message = string.gsub(r_message,"a/an",article)
-        TheNet:Say(r_message..pos_message)
+        TheNet:Say(message..r_message..pos_message.." item")
     end,
     
     ["structure"] = function(act)
@@ -78,7 +80,7 @@ local ping_types = {
         local r_message = structure_messages[math.random(#structure_messages)]
         r_message = string.gsub(r_message,"%%S",object_name)
         r_message = string.gsub(r_message,"a/an",article)
-        TheNet:Say(r_message..pos_message)
+        TheNet:Say(message..r_message..pos_message.." structure")
     end,
     
     ["mob"] = function(act)
@@ -87,7 +89,7 @@ local ping_types = {
         local r_message = mob_messages[math.random(#mob_messages)]
         r_message = string.gsub(r_message,"%%S",object_name)
         r_message = string.gsub(r_message,"a/an",article)
-        TheNet:Say(r_message..pos_message)
+        TheNet:Say(message..r_message..pos_message.." mob")
     end,
     
     ["boss"] = function(act)
@@ -96,7 +98,7 @@ local ping_types = {
         local r_message = boss_messages[math.random(#boss_messages)]
         r_message = string.gsub(r_message,"%%S",object_name)
         r_message = string.gsub(r_message,"a/an",article)
-        TheNet:Say(r_message..pos_message)
+        TheNet:Say(message..r_message..pos_message.." boss")
     end,
     
     ["other"] = function(act)
@@ -105,7 +107,7 @@ local ping_types = {
         local r_message = other_messages[math.random(#other_messages)]
         r_message = string.gsub(r_message,"%%S",object_name)
         r_message = string.gsub(r_message,"a/an",article)
-        TheNet:Say(r_message..pos_message)
+        TheNet:Say(message..r_message..pos_message.." other")
     end,
 }
 

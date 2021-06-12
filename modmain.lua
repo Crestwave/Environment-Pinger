@@ -96,12 +96,12 @@ local function PlayerActionPickerPostInit(playeractionpicker,player)
            end
            if entity_target:HasTag("epic") then
               lmb = BufferedAction(player,entity_target,ACTIONS[ping_boss_name])
+          elseif entity_target:HasTag("_inventoryitem") and entity_target.replica.inventoryitem:CanBePickedUp() then
+              lmb = BufferedAction(player,entity_target,ACTIONS[ping_item_name])
           elseif entity_target:HasTag("structure") or entity_target:HasTag("hammer_WORKABLE") then
               lmb = BufferedAction(player,entity_target,ACTIONS[ping_structure_name])
           elseif entity_target:HasTag("_health") then
               lmb = BufferedAction(player,entity_target,ACTIONS[ping_mob_name])
-          elseif entity_target:HasTag("_inventoryitem") then
-              lmb = BufferedAction(player,entity_target,ACTIONS[ping_item_name])
           else
               lmb = BufferedAction(player,entity_target,ACTIONS[ping_other_name])
            end
