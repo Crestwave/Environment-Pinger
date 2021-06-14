@@ -1,19 +1,28 @@
 local pingstrings = require "environmentpinger/pingstrings"
-
+local Image = require "widgets/image"
+local PingImageManager = require "widgets/pingimagemanager"
 
 local EnvironmentPinger = Class(function(self,inst)
         self.owner = inst
-        self.indicators = {}
     end)
 
 
 function EnvironmentPinger:OnMessageReceived(chatqueue,name,prefab,message,colour,whisper,profileflair)
     if string.match(message,STRINGS.LMB.." .+\n{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} %S+") then
-       print(string.match(message,STRINGS.LMB.." .+\n{([-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+)} %S+"))
-       print(string.match(message,STRINGS.LMB.." .+\n{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} (%S+)"))
+       local pos_str = string.match(message,STRINGS.LMB.." .+\n{([-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+)} %S+")
+       local pos_x = tonumber(string.match(pos_str,"(.+),"))
+       local pos_z = tonumber(string.match(pos_str,",(.+)"))
+       local ping_type = string.match(message,STRINGS.LMB.." .+\n{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} (%S+)")
+       self:AddIndicator(name,ping_type,{x = pos_x,y = 0,z = pos_z},colour)
     end
 end
 
+function EnvironmentPinger:AddIndicator(source,ping_type,pos,colour)
+    if not self.pingimagemanager and self.owner.HUD then
+        self.pingimagemanager = self.owner.HUD:AddChild(PingImageManager(self.owner))
+    end
+    self.pingimagemanager:AddIndicator(source,ping_type,pos,colour)
+end
 
 function EnvironmentPinger:IsOnFire(object)
     return object:HasTag("fire")

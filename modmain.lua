@@ -91,9 +91,6 @@ local function PlayerActionPickerPostInit(playeractionpicker,player)
                return lmb,rmb
            end
            
-           if entity_target:HasTag("character") then --Ignore characters.
-               return lmb,rmb
-           end
            if entity_target:HasTag("epic") then
               lmb = BufferedAction(player,entity_target,ACTIONS[ping_boss_name])
           elseif entity_target:HasTag("_inventoryitem") and entity_target.replica.inventoryitem:CanBePickedUp() then
