@@ -13,7 +13,10 @@ function EnvironmentPinger:OnMessageReceived(chatqueue,name,prefab,message,colou
        local pos_x = tonumber(string.match(pos_str,"(.+),"))
        local pos_z = tonumber(string.match(pos_str,",(.+)"))
        local ping_type = string.match(message,STRINGS.LMB.." .+\n{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} (%S+)")
-       self:AddIndicator(name,ping_type,{x = pos_x,y = 0,z = pos_z},colour)
+       print(pos_x,pos_z,ping_type)
+       if EnvironmentPinger:IsValidPingType(ping_type) then
+           self:AddIndicator(name,ping_type,{x = pos_x,y = 0,z = pos_z},colour)
+       end
     end
 end
 
@@ -119,6 +122,10 @@ local ping_types = {
         TheNet:Say(message..r_message..pos_message.." other")
     end,
 }
+
+function EnvironmentPinger:IsValidPingType(ping_type)
+    return ping_types[ping_type] ~= nil
+end
 
 function EnvironmentPinger:HandlePingType(ping_type,act)
     return ping_types[ping_type] ~= nil and ping_types[ping_type](act)
