@@ -2,6 +2,12 @@ local pingstrings = require "environmentpinger/pingstrings"
 local Image = require "widgets/image"
 local PingImageManager = require "widgets/pingimagemanager"
 
+local function LoadConfig(name)
+	local mod = "Environment Pinger"
+	return GetModConfigData(name,mod) or GetModConfigData(name,KnownModIndex:GetModActualName(mod))
+end
+local whisper_key = LoadConfig("whisper_key")
+
 local EnvironmentPinger = Class(function(self,inst)
         self.owner = inst
     end)
@@ -13,7 +19,6 @@ function EnvironmentPinger:OnMessageReceived(chatqueue,name,prefab,message,colou
        local pos_x = tonumber(string.match(pos_str,"(.+),"))
        local pos_z = tonumber(string.match(pos_str,",(.+)"))
        local ping_type = string.match(message,STRINGS.LMB.." .+\n{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} (%S+)")
-       print(pos_x,pos_z,ping_type)
        if EnvironmentPinger:IsValidPingType(ping_type) then
            self:AddIndicator(name,ping_type,{x = pos_x,y = 0,z = pos_z},colour)
        end
@@ -63,13 +68,13 @@ function EnvironmentPinger:HandleBaseMessageInformation(act)
 end
 
 local ping_types = {
-    ["ground"] = function(act)
+    ["ground"] = function(act,whisper)
         local message,pos_message = EnvironmentPinger:HandleBaseMessageInformation(act)
         local ground_messages = pingstrings.ground
         local r_message = ground_messages[math.random(#ground_messages)]
-        TheNet:Say(message..r_message..pos_message.." ground")
+        TheNet:Say(message..r_message..pos_message.." ground",whisper)
     end,
-    ["item"] = function(act)
+    ["item"] = function(act,whisper)
         local message,pos_message,object_name,stack_size,item_name_many,article = EnvironmentPinger:HandleBaseMessageInformation(act)
         local item_messages = pingstrings.item
         local r_message = item_messages[math.random(#item_messages)]
@@ -83,43 +88,43 @@ local ping_types = {
             r_message = string.gsub(r_message,"that/those","that")
         end
         r_message = string.gsub(r_message,"a/an",article)
-        TheNet:Say(message..r_message..pos_message.." item")
+        TheNet:Say(message..r_message..pos_message.." item",whisper)
     end,
     
-    ["structure"] = function(act)
+    ["structure"] = function(act,whisper)
         local message,pos_message,object_name,stack_size,item_name_many,article = EnvironmentPinger:HandleBaseMessageInformation(act)
         local structure_messages = pingstrings.structure
         local r_message = structure_messages[math.random(#structure_messages)]
         r_message = string.gsub(r_message,"%%S",object_name)
         r_message = string.gsub(r_message,"a/an",article)
-        TheNet:Say(message..r_message..pos_message.." structure")
+        TheNet:Say(message..r_message..pos_message.." structure",whisper)
     end,
     
-    ["mob"] = function(act)
+    ["mob"] = function(act,whisper)
         local message,pos_message,object_name,stack_size,item_name_many,article = EnvironmentPinger:HandleBaseMessageInformation(act)
         local mob_messages = pingstrings.mob
         local r_message = mob_messages[math.random(#mob_messages)]
         r_message = string.gsub(r_message,"%%S",object_name)
         r_message = string.gsub(r_message,"a/an",article)
-        TheNet:Say(message..r_message..pos_message.." mob")
+        TheNet:Say(message..r_message..pos_message.." mob",whisper)
     end,
     
-    ["boss"] = function(act)
+    ["boss"] = function(act,whisper)
         local message,pos_message,object_name,stack_size,item_name_many,article = EnvironmentPinger:HandleBaseMessageInformation(act)
         local boss_messages = pingstrings.boss
         local r_message = boss_messages[math.random(#boss_messages)]
         r_message = string.gsub(r_message,"%%S",object_name)
         r_message = string.gsub(r_message,"a/an",article)
-        TheNet:Say(message..r_message..pos_message.." boss")
+        TheNet:Say(message..r_message..pos_message.." boss",whisper)
     end,
     
-    ["other"] = function(act)
+    ["other"] = function(act,whisper)
         local message,pos_message,object_name,stack_size,item_name_many,article = EnvironmentPinger:HandleBaseMessageInformation(act)
         local other_messages = pingstrings.other
         local r_message = other_messages[math.random(#other_messages)]
         r_message = string.gsub(r_message,"%%S",object_name)
         r_message = string.gsub(r_message,"a/an",article)
-        TheNet:Say(message..r_message..pos_message.." other")
+        TheNet:Say(message..r_message..pos_message.." other",whisper)
     end,
 }
 
@@ -127,8 +132,8 @@ function EnvironmentPinger:IsValidPingType(ping_type)
     return ping_types[ping_type] ~= nil
 end
 
-function EnvironmentPinger:HandlePingType(ping_type,act)
-    return ping_types[ping_type] ~= nil and ping_types[ping_type](act)
+function EnvironmentPinger:HandlePingType(ping_type,act,whisper)
+    return ping_types[ping_type] ~= nil and ping_types[ping_type](act,whisper)
 end
 
 local random_environment_messages = {
@@ -139,7 +144,7 @@ local random_environment_messages = {
 }
     
 function EnvironmentPinger:Ping(ping_type,act)
-    self:HandlePingType(ping_type,act)
+    self:HandlePingType(ping_type,act,TheInput:IsKeyDown(whisper_key))
 end
 
 return EnvironmentPinger

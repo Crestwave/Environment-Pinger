@@ -14,8 +14,8 @@ local PingImageManager = Class(Widget,function(self,inst)
         self.owner = inst
         Widget._ctor(self,"PingImageManager")
         self.indicators = {}
+        --Format: {[source] = {widget = widget, pos = pos, target = target, colour = colour}}
         self.tasks = {}
-        --Format: {[source] = {widget = widget, pos = pos, target = target}}
         self.images = {
          ["ground"] = {atlas = "images/inventoryimages.xml", tex = "turf_grass.tex"},
          ["item"] = {atlas = "images/inventoryimages1.xml", tex = "minifan.tex"},
@@ -31,11 +31,18 @@ local PingImageManager = Class(Widget,function(self,inst)
         self:StartUpdating()
     end)
 
-function PingImageManager:AddIndicator(source,ping_type,position,colour)
+function PingImageManager:KillIndicator(source)
     if self.indicators[source] then
        self.indicators[source].widget:Kill()
+       if self.indicators[source].target then
+          self:StopEntHighlighting(self.indicators[source].target) 
+       end
        self.indicators[source] = nil
     end
+end
+
+function PingImageManager:AddIndicator(source,ping_type,position,colour)
+    self:KillIndicator(source)
     position = position and position.x and {position.x,position.y,position.z} or {0,0,0}
     local img = self.images[ping_type]
     if not img then return nil end
@@ -45,14 +52,14 @@ function PingImageManager:AddIndicator(source,ping_type,position,colour)
     local target
     local entities = TheSim:FindEntities(position[1],position[2],position[3],1,{},{"INLIMBO"},{"epic","_inventoryitem","structure","_health"})
     target = ping_type ~= "ground" and entities[1]
-    self.indicators[source] = {widget = img_widget, pos = position, target = target}
+    self.indicators[source] = {widget = img_widget, pos = position, target = target, colour = colour}
     
     local remove_task = self.tasks[source]
     if remove_task then
         remove_task:Cancel()
         self.tasks[source] = nil
     end
-    self.tasks[source] = self.owner:DoTaskInTime(20,function() self.indicators[source].widget:Kill() self.indicators[source] = nil end)
+    self.tasks[source] = self.owner:DoTaskInTime(20,function() self:KillIndicator(source) end)
     self:UpdateIndicatorPositions()
 end
 
@@ -75,6 +82,7 @@ function PingImageManager:UpdateIndicatorPositions()
       local target = data.target
       if target and target:IsValid() and not target:HasTag("INLIMBO") then
           local pos = {target.Transform:GetWorldPosition()}
+          self:DoEntHighlighting(target,self.indicators[source].colour)
           self.indicators[source].pos = pos
       elseif target then
           self.indicators[source].target = nil
@@ -149,6 +157,22 @@ function PingImageManager:DoOffscreenIndicator(widget,pos,screenWidth,screenHeig
     end
     
     widget:SetPosition(x,y,0)
+end
+
+function PingImageManager:DoEntHighlighting(ent,colour)
+   if not ent.components.highlight then
+       ent:AddComponent("highlight")
+   end
+   local highlighter = ent.components.highlight
+   highlighter:SetAddColour({x = colour[1], y = colour[2], z = colour[3]})
+   highlighter:Highlight()
+end
+
+function PingImageManager:StopEntHighlighting(ent)
+   if not ent.components.highlight then return nil end
+   local highlighter = ent.components.highlight
+   highlighter:OnRemoveFromEntity()
+   highlighter:UnHighlight()
 end
 
 function PingImageManager:OnUpdate(dt)

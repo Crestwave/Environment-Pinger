@@ -4,7 +4,7 @@ local strings = {
         "Look at this spot!",
         "Look over here!",
         "Look!",
-        "See here",
+        "See here.",
     },
     
     item = {
@@ -12,6 +12,7 @@ local strings = {
         "Look at this/these %S!",
         "See the %S here!",
         "There's a/an %S here!",
+        "%S here!"
     },
     
     structure = {
@@ -36,6 +37,7 @@ local strings = {
         "Look at that huge %S!",
         "The %S might be able to digest me!",
         "Danger! There's a/an %S here!",
+        "Watch out, %S is here!",
     },
     
     other = {
@@ -43,6 +45,8 @@ local strings = {
         "What a glamorous %S.",
         "Quite a fascinating %S here.",
         "Behold it's a/an... %S.",
+        "Is this a/an %S?", -- *points to butterfly*
+        "Huh, it's a/an %S.",
     },
     
     generic = {
