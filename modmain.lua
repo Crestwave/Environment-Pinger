@@ -70,6 +70,8 @@ AddAction(ping_mob_name,"Ping mob",ping_mob_fn)
 AddAction(ping_boss_name,"Ping boss",ping_boss_fn)
 AddAction(ping_other_name,"Ping",ping_other_fn)
 -- Check for a fire as a valid sub-type in all ping types.
+-- Or rather, add it as an adjective for the objects.
+-- Could ping sub-types be useful? Eg. Mob dividing into friendly, neutral, agressive, boss?
 
 local function PlayerActionPickerPostInit(playeractionpicker,player)
     if player ~= _G.ThePlayer then

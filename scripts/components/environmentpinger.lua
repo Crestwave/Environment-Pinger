@@ -8,8 +8,13 @@ local function LoadConfig(name)
 end
 local whisper_key = LoadConfig("whisper_key")
 
+
+local current_world
+
 local EnvironmentPinger = Class(function(self,inst)
         self.owner = inst
+        current_world = TheWorld and TheWorld:HasTag("cave") and "2" or "1"
+        -- 2 - Caves, 1 - Surface
     end)
 
 
@@ -19,6 +24,10 @@ function EnvironmentPinger:OnMessageReceived(chatqueue,name,prefab,message,colou
        local pos_x = tonumber(string.match(pos_str,"(.+),"))
        local pos_z = tonumber(string.match(pos_str,",(.+)"))
        local ping_type = string.match(message,STRINGS.LMB.." .+\n{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} (%S+)")
+       local world = string.match(message,STRINGS.LMB.." .+\n{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} %S+ (%d)")
+       -- Assuming coordinates are 3 digit numbers, I am using 26~ characters worth of data.
+       -- I could grab the session id, but that is 15 characters of data, which is way too much
+       if world and not (current_world == world) then return nil end -- Different world means different ping meaning.
        if EnvironmentPinger:IsValidPingType(ping_type) then
            self:AddIndicator(name,ping_type,{x = pos_x,y = 0,z = pos_z},colour)
        end
@@ -49,6 +58,7 @@ function EnvironmentPinger:HandleBaseMessageInformation(act)
     local pos = target and target:GetPosition() or TheInput:GetWorldPosition()
     local pos_message = pos and "\n{"..string.format("%.3f",pos.x)..","..string.format("%.3f",pos.z).."}" or ""
     local message = STRINGS.LMB.." "
+    local current_world = current_world or "1"
     if target then
         local display_adjective_fn = target and target.displayadjectivefn
         local object_name = display_adjective_fn ~= nil and display_adjective_fn().." "..target:GetDisplayName() or target:GetDisplayName()
@@ -62,20 +72,20 @@ function EnvironmentPinger:HandleBaseMessageInformation(act)
         local cant_be_pluralized = string.match(object_name,"%a+(s)$") -- Last words letter is 's'
         local item_name_many = cant_be_pluralized and object_name or object_name.."s"
         local article = string.match(object_name,"^[AEIOUaeiou]") and "an" or "a"
-        return message,pos_message,object_name,stack_size,item_name_many,article
+        return message,pos_message,object_name,stack_size,item_name_many,article,current_world
     end
-    return message,pos_message
+    return message,pos_message,current_world
 end
 
 local ping_types = {
     ["ground"] = function(act,whisper)
-        local message,pos_message = EnvironmentPinger:HandleBaseMessageInformation(act)
+        local message,pos_message,current_world = EnvironmentPinger:HandleBaseMessageInformation(act)
         local ground_messages = pingstrings.ground
         local r_message = ground_messages[math.random(#ground_messages)]
-        TheNet:Say(message..r_message..pos_message.." ground",whisper)
+        TheNet:Say(message..r_message..pos_message.." ground".." "..current_world,whisper)
     end,
     ["item"] = function(act,whisper)
-        local message,pos_message,object_name,stack_size,item_name_many,article = EnvironmentPinger:HandleBaseMessageInformation(act)
+        local message,pos_message,object_name,stack_size,item_name_many,article,current_world = EnvironmentPinger:HandleBaseMessageInformation(act)
         local item_messages = pingstrings.item
         local r_message = item_messages[math.random(#item_messages)]
         if stack_size > 1 then
@@ -88,43 +98,45 @@ local ping_types = {
             r_message = string.gsub(r_message,"that/those","that")
         end
         r_message = string.gsub(r_message,"a/an",article)
-        TheNet:Say(message..r_message..pos_message.." item",whisper)
+        -- Kinda feels ugly with the amount of times I change the variable.
+        -- Might there be a better method for gsubing all of that?
+        TheNet:Say(message..r_message..pos_message.." item".." "..current_world,whisper)
     end,
     
     ["structure"] = function(act,whisper)
-        local message,pos_message,object_name,stack_size,item_name_many,article = EnvironmentPinger:HandleBaseMessageInformation(act)
+        local message,pos_message,object_name,stack_size,item_name_many,article,current_world = EnvironmentPinger:HandleBaseMessageInformation(act)
         local structure_messages = pingstrings.structure
         local r_message = structure_messages[math.random(#structure_messages)]
         r_message = string.gsub(r_message,"%%S",object_name)
         r_message = string.gsub(r_message,"a/an",article)
-        TheNet:Say(message..r_message..pos_message.." structure",whisper)
+        TheNet:Say(message..r_message..pos_message.." structure".." "..current_world,whisper)
     end,
     
     ["mob"] = function(act,whisper)
-        local message,pos_message,object_name,stack_size,item_name_many,article = EnvironmentPinger:HandleBaseMessageInformation(act)
+        local message,pos_message,object_name,stack_size,item_name_many,article,current_world = EnvironmentPinger:HandleBaseMessageInformation(act)
         local mob_messages = pingstrings.mob
         local r_message = mob_messages[math.random(#mob_messages)]
         r_message = string.gsub(r_message,"%%S",object_name)
         r_message = string.gsub(r_message,"a/an",article)
-        TheNet:Say(message..r_message..pos_message.." mob",whisper)
+        TheNet:Say(message..r_message..pos_message.." mob".." "..current_world,whisper)
     end,
     
     ["boss"] = function(act,whisper)
-        local message,pos_message,object_name,stack_size,item_name_many,article = EnvironmentPinger:HandleBaseMessageInformation(act)
+        local message,pos_message,object_name,stack_size,item_name_many,article,current_world = EnvironmentPinger:HandleBaseMessageInformation(act)
         local boss_messages = pingstrings.boss
         local r_message = boss_messages[math.random(#boss_messages)]
         r_message = string.gsub(r_message,"%%S",object_name)
         r_message = string.gsub(r_message,"a/an",article)
-        TheNet:Say(message..r_message..pos_message.." boss",whisper)
+        TheNet:Say(message..r_message..pos_message.." boss".." "..current_world,whisper)
     end,
     
     ["other"] = function(act,whisper)
-        local message,pos_message,object_name,stack_size,item_name_many,article = EnvironmentPinger:HandleBaseMessageInformation(act)
+        local message,pos_message,object_name,stack_size,item_name_many,article,current_world = EnvironmentPinger:HandleBaseMessageInformation(act)
         local other_messages = pingstrings.other
         local r_message = other_messages[math.random(#other_messages)]
         r_message = string.gsub(r_message,"%%S",object_name)
         r_message = string.gsub(r_message,"a/an",article)
-        TheNet:Say(message..r_message..pos_message.." other",whisper)
+        TheNet:Say(message..r_message..pos_message.." other".." "..current_world,whisper)
     end,
 }
 
@@ -135,13 +147,6 @@ end
 function EnvironmentPinger:HandlePingType(ping_type,act,whisper)
     return ping_types[ping_type] ~= nil and ping_types[ping_type](act,whisper)
 end
-
-local random_environment_messages = {
-    "Guys, are you blind? Look over here!",
-    "Look over here!",
-    "Look!",
-    "Look here!",
-}
     
 function EnvironmentPinger:Ping(ping_type,act)
     self:HandlePingType(ping_type,act,TheInput:IsKeyDown(whisper_key))

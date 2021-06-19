@@ -5,6 +5,7 @@ local strings = {
         "Look over here!",
         "Look!",
         "See here.",
+        "Here!",
     },
     
     item = {
@@ -12,13 +13,14 @@ local strings = {
         "Look at this/these %S!",
         "See the %S here!",
         "There's a/an %S here!",
-        "%S here!"
+        "%S here!",
     },
     
     structure = {
         "Cool looking %S here!",
         "Found a/an %S!",
         "See here for a/an %S!",
+        "Look here, it's a/an %S.",
     },
     
     mob = {
@@ -27,7 +29,8 @@ local strings = {
         "I spy with my eye a/an %S!",
         "Be careful of the %S here!",
         "Look at the %S!",
-        "Hmm, there's a/an %S here."
+        "Hmm, there's a/an %S here.",
+        "There is a/an %S here!",
     },
     
     

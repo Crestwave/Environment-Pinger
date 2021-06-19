@@ -9,6 +9,13 @@ local RIGHT_EDGE_BUFFER = 80
 local screen_x,screen_z
 
 
+local function LoadConfig(name)
+	local mod = "Environment Pinger"
+	return GetModConfigData(name,mod) or GetModConfigData(name,KnownModIndex:GetModActualName(mod))
+end
+
+local pingsound = LoadConfig("pingsound")
+
 local PingImageManager = Class(Widget,function(self,inst)
         screen_x,screen_z = TheSim:GetScreenSize()
         self.owner = inst
@@ -25,6 +32,7 @@ local PingImageManager = Class(Widget,function(self,inst)
          ["other"] = {atlas = "images/inventoryimages.xml", tex = "nightmare_timepiece.tex"},
          ["background"] = {atlas = "images/avatars.xml",tex = "avatar_frame_white.tex"},
         }
+        self.img_scale_modifier = 0.5
         self:Show()
         self:SetClickable(false)
         self:MoveToBack()
@@ -34,11 +42,40 @@ local PingImageManager = Class(Widget,function(self,inst)
 function PingImageManager:KillIndicator(source)
     if self.indicators[source] then
        self.indicators[source].widget:Kill()
+       if self.tasks[source] then
+          self.tasks[source]:Cancel()
+          self.tasks[source] = nil
+       end
        if self.indicators[source].target then
           self:StopEntHighlighting(self.indicators[source].target) 
        end
        self.indicators[source] = nil
     end
+end
+
+function PingImageManager:RemoveIndicatorWithTarget(target)
+    if not target then return nil end
+    for source,data in pairs(self.indicators) do
+       if data.target == target then
+           self:KillIndicator(source)
+           break
+       end
+    end
+end
+
+
+function PingImageManager:PlayVolumeScaledSound(pos,sound)
+    if not (pingsound and sound) then return nil end
+    local player_pos = self.owner:GetPosition()
+    local dist_sq = Dist2dSq({x = pos[1], y = pos[3]},{x = player_pos.x,y = player_pos.z})
+    local near_audio_gate_distsq = TUNING.MINIFLARE.HUD_MAX_DISTANCE_SQ
+    local far_audio_gate_distsq = TUNING.MINIFLARE.FAR_AUDIO_GATE_DISTANCE_SQ
+    local volume = (dist_sq > far_audio_gate_distsq and TUNING.MINIFLARE.BASE_VOLUME)
+                or (dist_sq > near_audio_gate_distsq and
+                        TUNING.MINIFLARE.BASE_VOLUME + (1 - Remap(dist_sq, near_audio_gate_distsq, far_audio_gate_distsq, 0, 1)) * (1-TUNING.MINIFLARE.BASE_VOLUME)
+                    )
+                or 1.0
+    TheFrontEnd:GetSound():PlaySound(sound, nil, volume)
 end
 
 function PingImageManager:AddIndicator(source,ping_type,position,colour)
@@ -47,18 +84,15 @@ function PingImageManager:AddIndicator(source,ping_type,position,colour)
     local img = self.images[ping_type]
     if not img then return nil end
     local img_widget = self:AddChild(Image(img.atlas,img.tex))
-    img_widget:SetScale(0.5,0.5,0.5)
+    img_widget:SetScale(self.img_scale_modifier)
     self:AddIndicatorBackgroundAndText(source,img_widget,ping_type,colour)
     local target
     local entities = TheSim:FindEntities(position[1],position[2],position[3],1,{},{"INLIMBO"},{"epic","_inventoryitem","structure","_health"})
-    target = ping_type ~= "ground" and entities[1]
+    target = ping_type ~= "ground" and ping_type ~= "other" and entities[1]
+    self:RemoveIndicatorWithTarget(target)
     self.indicators[source] = {widget = img_widget, pos = position, target = target, colour = colour}
+    self:PlayVolumeScaledSound(position,"turnoftides/common/together/miniflare/explode")
     
-    local remove_task = self.tasks[source]
-    if remove_task then
-        remove_task:Cancel()
-        self.tasks[source] = nil
-    end
     self.tasks[source] = self.owner:DoTaskInTime(20,function() self:KillIndicator(source) end)
     self:UpdateIndicatorPositions()
 end
@@ -68,12 +102,26 @@ function PingImageManager:AddIndicatorBackgroundAndText(source,img_widget,ping_t
     local background = self.images.background
     img_widget.bg = img_widget:AddChild(Image(background.atlas,background.tex))
     img_widget.bg:SetTint(unpack(colour))
-    img_widget.text = img_widget:AddChild(Text(NUMBERFONT,32))
-    img_widget.text:SetPosition(0,64)
+
+    local tile_x,tile_y = img_widget.bg:GetSize()
+    local item_x,item_y = img_widget:GetSize()
+    local average_scale = 1
+    local inverse_average_scale = 1
+    if tile_x < item_x and tile_y < item_y then
+        local item_scale_x = item_x/tile_x
+        local item_scale_y = item_y/tile_y
+        average_scale = (item_scale_x+item_scale_y)/2
+        inverse_average_scale = 1/average_scale
+        img_widget:SetScale(inverse_average_scale*self.img_scale_modifier)
+        img_widget.bg:SetScale(average_scale)
+    end
+    
+    img_widget.text = img_widget:AddChild(Text(NUMBERFONT,32*average_scale))
+    img_widget.text:SetPosition(0,64*average_scale)
     img_widget.text:SetString(source)
     img_widget.text:SetColour(unpack(colour))
-    img_widget.text_distance = img_widget:AddChild(Text(NUMBERFONT,32))
-    img_widget.text_distance:SetPosition(0,-64)
+    img_widget.text_distance = img_widget:AddChild(Text(NUMBERFONT,32*average_scale))
+    img_widget.text_distance:SetPosition(0,-64*average_scale)
     img_widget.text_distance:SetColour(unpack(colour))
 end
 
@@ -95,7 +143,8 @@ function PingImageManager:UpdateIndicatorPositions()
       end
       if self.owner and self.owner:IsValid() then
           local x,y,z = self.owner.Transform:GetWorldPosition()
-          local dist = string.format("%.2f",math.sqrt(Dist2dSq({x = x, y = z},{x = data.pos[1], y = data.pos[3]})))
+          local dist_sq = Dist2dSq({x = x, y = z},{x = data.pos[1],y = data.pos[3]})
+          local dist = string.format("%.1f",math.sqrt(dist_sq))
          data.widget.text_distance:SetString(dist.."m")
       end
    end
@@ -155,7 +204,10 @@ function PingImageManager:DoOffscreenIndicator(widget,pos,screenWidth,screenHeig
     elseif y >= screenHeight - 2*TOP_EDGE_BUFFER then
         y = screenHeight - 2*TOP_EDGE_BUFFER
     end
-    
+    -- I would really like to change this to be very accurate
+    -- But the current method is very quick and simple
+    -- and the approximation is good enough to have a sense of direction
+    -- so I'll keep it as it is.
     widget:SetPosition(x,y,0)
 end
 
