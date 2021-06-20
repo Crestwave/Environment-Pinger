@@ -157,7 +157,48 @@ local function PlayerPostInit(player)
     end)
 end
 
+local function MapScreenPostInit(self)
+    if not _G.ThePlayer then return nil end
+    
+    
+    local old_OnBecomeActive = self.OnBecomeActive
+    
+    self.OnBecomeActive = function(self)
+        if _G.ThePlayer.components.environmentpinger then
+           _G.ThePlayer.components.environmentpinger:SetIndicatorsToMapPositions(true)
+        end
+       old_OnBecomeActive(self)
+    end
+    
+    
+    local old_OnBecomeInactive = self.OnBecomeInactive
+    
+    self.OnBecomeInactive = function(self)
+       if _G.ThePlayer.components.environmentpinger then
+           _G.ThePlayer.components.environmentpinger:SetIndicatorsToMapPositions(false) 
+        end
+       old_OnBecomeInactive(self)
+    end
+    
+    
+    local old_OnControl = self.OnControl
+    
+    self.OnControl = function(self,control,down)
+        if (not down) and (control == 29) and TheInput:IsKeyDown(ping_key) then -- 29 = CONTROL_ACCEPT = Leftclick on the map
+            if _G.ThePlayer.components.environmentpinger then
+                local pos = TheInput:GetScreenPosition()
+                local widget_pos = self:ScreenPosToWidgetPos(pos)
+                local world_pos = self:WidgetPosToMapPos(widget_pos)
+                local x,y,z = self.minimap:MapPosToWorldPos(world_pos.x,world_pos.y,world_pos.z)
+                _G.ThePlayer.components.environmentpinger:Ping("map",{position = {x = x, z = y}})
+            end
+        end
+        
+        old_OnControl(self,control,down)
+    end
+end
 AddComponentPostInit("playeractionpicker",PlayerActionPickerPostInit)
 AddComponentPostInit("playercontroller", PlayerControllerPostInit)
+AddClassPostConstruct("screens/mapscreen", MapScreenPostInit)
 AddPlayerPostInit(PlayerPostInit)
 

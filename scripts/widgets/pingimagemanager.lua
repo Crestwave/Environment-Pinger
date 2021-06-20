@@ -23,14 +23,16 @@ local PingImageManager = Class(Widget,function(self,inst)
         self.indicators = {}
         --Format: {[source] = {widget = widget, pos = pos, target = target, colour = colour}}
         self.tasks = {}
+        self.mapindicators = nil
         self.images = {
-         ["ground"] = {atlas = "images/inventoryimages.xml", tex = "turf_grass.tex"},
-         ["item"] = {atlas = "images/inventoryimages1.xml", tex = "minifan.tex"},
-         ["structure"] = {atlas = "images/hud.xml", tex = "tab_build.tex"},
-         ["mob"] = {atlas = "images/inventoryimages.xml", tex = "mole.tex"},
-         ["boss"] = {atlas = "images/inventoryimages.xml", tex = "deerclops_eyeball.tex"},
-         ["other"] = {atlas = "images/inventoryimages.xml", tex = "nightmare_timepiece.tex"},
-         ["background"] = {atlas = "images/avatars.xml",tex = "avatar_frame_white.tex"},
+         ["ground"] =    {atlas = "images/inventoryimages.xml", tex = "turf_grass.tex"},
+         ["item"] =      {atlas = "images/inventoryimages1.xml",tex = "minifan.tex"},
+         ["structure"] = {atlas = "images/hud.xml",             tex = "tab_build.tex"},
+         ["mob"] =       {atlas = "images/inventoryimages.xml", tex = "mole.tex"},
+         ["boss"] =      {atlas = "images/inventoryimages.xml", tex = "deerclops_eyeball.tex"},
+         ["other"] =     {atlas = "images/inventoryimages.xml", tex = "nightmare_timepiece.tex"},
+         ["map"] =       {atlas = "images/inventoryimages1.xml",tex = "compass.tex"},
+         ["background"] ={atlas = "images/avatars.xml",         tex = "avatar_frame_white.tex"},
         }
         self.img_scale_modifier = 0.5
         self:Show()
@@ -38,6 +40,10 @@ local PingImageManager = Class(Widget,function(self,inst)
         self:MoveToBack()
         self:StartUpdating()
     end)
+
+function PingImageManager:SetIndicatorsToMapPositions(bool)
+   self.mapindicators = bool
+end
 
 function PingImageManager:KillIndicator(source)
     if self.indicators[source] then
@@ -78,6 +84,16 @@ function PingImageManager:PlayVolumeScaledSound(pos,sound)
     TheFrontEnd:GetSound():PlaySound(sound, nil, volume)
 end
 
+local target_pingtypes = {
+    ["ground"] = false,
+    ["item"] = true,
+    ["structure"] = true,
+    ["mob"] = true,
+    ["boss"] = true,
+    ["other"] = false,
+    ["map"] = false,
+}
+
 function PingImageManager:AddIndicator(source,ping_type,position,colour)
     self:KillIndicator(source)
     position = position and position.x and {position.x,position.y,position.z} or {0,0,0}
@@ -88,13 +104,13 @@ function PingImageManager:AddIndicator(source,ping_type,position,colour)
     self:AddIndicatorBackgroundAndText(source,img_widget,ping_type,colour)
     local target
     local entities = TheSim:FindEntities(position[1],position[2],position[3],1,{},{"INLIMBO"},{"epic","_inventoryitem","structure","_health"})
-    target = ping_type ~= "ground" and ping_type ~= "other" and entities[1]
+    target = target_pingtypes[ping_type] and entities[1]
     self:RemoveIndicatorWithTarget(target)
     self.indicators[source] = {widget = img_widget, pos = position, target = target, colour = colour}
     self:PlayVolumeScaledSound(position,"turnoftides/common/together/miniflare/explode")
     
     self.tasks[source] = self.owner:DoTaskInTime(20,function() self:KillIndicator(source) end)
-    self:UpdateIndicatorPositions()
+    self:UpdateIndicators()
 end
 
 
@@ -125,7 +141,7 @@ function PingImageManager:AddIndicatorBackgroundAndText(source,img_widget,ping_t
     img_widget.text_distance:SetColour(unpack(colour))
 end
 
-function PingImageManager:UpdateIndicatorPositions()
+function PingImageManager:UpdateIndicators()
    for source,data in pairs(self.indicators) do
       local target = data.target
       if target and target:IsValid() and not target:HasTag("INLIMBO") then
@@ -228,7 +244,7 @@ function PingImageManager:StopEntHighlighting(ent)
 end
 
 function PingImageManager:OnUpdate(dt)
-   self:UpdateIndicatorPositions()
+   self:UpdateIndicators()
 end
 
 return PingImageManager

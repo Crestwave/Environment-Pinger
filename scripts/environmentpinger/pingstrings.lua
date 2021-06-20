@@ -1,3 +1,8 @@
+-- Automatically subbed strings:
+-- that/those
+-- %S
+-- a/an
+-- this/these
 local strings = {
     ground = {
         "Look here!",
@@ -14,6 +19,7 @@ local strings = {
         "See the %S here!",
         "There's a/an %S here!",
         "%S here!",
+        "%S!",
     },
     
     structure = {
@@ -43,6 +49,12 @@ local strings = {
         "Watch out, %S is here!",
     },
     
+    map = {
+        "Check your maps here!",
+        "Look at the map position!",
+        "Look at your maps!",
+    },
+    
     other = {
         "Woah, look at this %S!",
         "What a glamorous %S.",
@@ -56,6 +68,21 @@ local strings = {
         "Look!",
         "See this!",
         "Here!",
+    },
+    
+    custom = {
+        mole = {
+            "You shouldn't eat precious minerals, %S, it will get you killed.",
+        },
+        molehill = {
+            "%S here! I bet it's hiding precious minerals and trinkets.",
+        },
+        warly = {
+            "The master chef %S is here!",
+        },
+        wathgrithr = {
+            "The mighty warrior %S is here!",
+        },
     },
 }
 
