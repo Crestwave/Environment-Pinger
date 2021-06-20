@@ -165,7 +165,7 @@ local function MapScreenPostInit(self)
     
     self.OnBecomeActive = function(self)
         if _G.ThePlayer.components.environmentpinger then
-           _G.ThePlayer.components.environmentpinger:SetIndicatorsToMapPositions(true)
+           _G.ThePlayer.components.environmentpinger:SetIndicatorsToMapPositions(true,self)
         end
        old_OnBecomeActive(self)
     end
@@ -175,7 +175,7 @@ local function MapScreenPostInit(self)
     
     self.OnBecomeInactive = function(self)
        if _G.ThePlayer.components.environmentpinger then
-           _G.ThePlayer.components.environmentpinger:SetIndicatorsToMapPositions(false) 
+           _G.ThePlayer.components.environmentpinger:SetIndicatorsToMapPositions(false,self) 
         end
        old_OnBecomeInactive(self)
     end

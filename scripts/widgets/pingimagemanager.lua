@@ -1,12 +1,15 @@
 local Widget = require "widgets/widget"
 local Image = require "widgets/image"
 local Text = require "widgets/text"
+local Easing = require("easing")
 
 local TOP_EDGE_BUFFER = 30
 local BOTTOM_EDGE_BUFFER = 40
 local LEFT_EDGE_BUFFER = 67
 local RIGHT_EDGE_BUFFER = 80
 local screen_x,screen_z
+local half_x, half_z = RESOLUTION_X / 2, RESOLUTION_Y / 2
+
 
 
 local function LoadConfig(name)
@@ -24,6 +27,13 @@ local PingImageManager = Class(Widget,function(self,inst)
         --Format: {[source] = {widget = widget, pos = pos, target = target, colour = colour}}
         self.tasks = {}
         self.mapindicators = nil
+        self.map_root = nil
+        self.zoomed_scale = {}
+        self.mapicons = {}
+        self.img_scale_modifier = 0.5
+        for i = 1, 20 do
+            self.zoomed_scale[i] = self.img_scale_modifier - Easing.outExpo(i - 1, 0, self.img_scale_modifier - 0.25, 8)
+        end
         self.images = {
          ["ground"] =    {atlas = "images/inventoryimages.xml", tex = "turf_grass.tex"},
          ["item"] =      {atlas = "images/inventoryimages1.xml",tex = "minifan.tex"},
@@ -34,19 +44,46 @@ local PingImageManager = Class(Widget,function(self,inst)
          ["map"] =       {atlas = "images/inventoryimages1.xml",tex = "compass.tex"},
          ["background"] ={atlas = "images/avatars.xml",         tex = "avatar_frame_white.tex"},
         }
-        self.img_scale_modifier = 0.5
         self:Show()
         self:SetClickable(false)
         self:MoveToBack()
         self:StartUpdating()
     end)
 
-function PingImageManager:SetIndicatorsToMapPositions(bool)
+local function WorldPosToScreenPos(x, y)
+    local _x,_y,_ = TheWorld.minimap.MiniMap:WorldPosToMapPos(x,y,0)
+    local widget_pos =  {_x * RESOLUTION_X/2,_y * RESOLUTION_Y/2,0}
+    local screen_pos = {(widget_pos[1]+RESOLUTION_X/2)/RESOLUTION_X*screen_x,(widget_pos[2]+RESOLUTION_Y/2)/RESOLUTION_Y*screen_z,0}
+    return screen_pos[1],screen_pos[2]
+end
+
+function PingImageManager:SetIndicatorsToMapPositions(bool,map)
    self.mapindicators = bool
+   if bool and map then
+       self.map_root = map:AddChild(Widget("root"))
+       for source,data in pairs(self.indicators) do
+          self.map_root:AddChild(data.widget) 
+       end
+       local old_OnUpdate = map.OnUpdate
+       map.OnUpdate = function(...)
+           old_OnUpdate(...)
+           local scale = self.zoomed_scale[TheWorld.minimap.MiniMap:GetZoom()]
+           for source,data in pairs(self.indicators) do
+              data.widget:SetScale(scale) 
+           end
+       end
+   elseif self.map_root then
+        for source,data in pairs(self.indicators) do
+           self.map_root:RemoveChild(data.widget) 
+        end
+   end
 end
 
 function PingImageManager:KillIndicator(source)
     if self.indicators[source] then
+        if self.map_root then
+            self.map_root:RemoveChild(self.indicators[source].widget)
+        end
        self.indicators[source].widget:Kill()
        if self.tasks[source] then
           self.tasks[source]:Cancel()
@@ -109,6 +146,9 @@ function PingImageManager:AddIndicator(source,ping_type,position,colour)
     self.indicators[source] = {widget = img_widget, pos = position, target = target, colour = colour}
     self:PlayVolumeScaledSound(position,"turnoftides/common/together/miniflare/explode")
     
+    if self.map_root then
+       self.map_root:AddChild(img_widget) 
+    end
     self.tasks[source] = self.owner:DoTaskInTime(20,function() self:KillIndicator(source) end)
     self:UpdateIndicators()
 end
@@ -151,11 +191,16 @@ function PingImageManager:UpdateIndicators()
       elseif target then
           self.indicators[source].target = nil
       end
-      local pos_x,pos_y = TheSim:GetScreenPos(unpack(data.pos))
-      if pos_x > screen_x or pos_x < 0 or pos_y < 0 or pos_y > screen_z then
-         self:DoOffscreenIndicator(data.widget,data.pos,screen_x,screen_z)
+      if self.mapindicators then
+            local x,y = WorldPosToScreenPos(data.pos[1], data.pos[3])
+            data.widget:SetPosition(x,y)
       else
-         data.widget:SetPosition(pos_x,pos_y)
+            local pos_x,pos_y = TheSim:GetScreenPos(unpack(data.pos))
+            if pos_x > screen_x or pos_x < 0 or pos_y < 0 or pos_y > screen_z then
+                self:DoOffscreenIndicator(data.widget,data.pos,screen_x,screen_z)
+            else
+                data.widget:SetPosition(pos_x,pos_y)
+            end
       end
       if self.owner and self.owner:IsValid() then
           local x,y,z = self.owner.Transform:GetWorldPosition()
