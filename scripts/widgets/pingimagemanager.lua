@@ -199,6 +199,7 @@ function PingImageManager:UpdateIndicators()
             local pos_x,pos_y = TheSim:GetScreenPos(unpack(data.pos))
             if pos_x > screen_x or pos_x < 0 or pos_y < 0 or pos_y > screen_z then
                 self:DoOffscreenIndicator(data.widget,data.pos,screen_x,screen_z)
+                data.widget:SetScale(widget_scale)
             else
                 data.widget:SetPosition(pos_x,pos_y)
                 data.widget:SetScale(widget_scale)
