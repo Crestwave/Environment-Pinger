@@ -30,9 +30,9 @@ local PingImageManager = Class(Widget,function(self,inst)
         self.map_root = nil
         self.zoomed_scale = {}
         self.mapicons = {}
-        self.img_scale_modifier = 0.5
+        self.img_scale_modifier = 0.75
         for i = 1, 20 do
-            self.zoomed_scale[i] = self.img_scale_modifier - Easing.outExpo(i - 1, 0, self.img_scale_modifier - 0.25, 8)
+            self.zoomed_scale[i] = self.img_scale_modifier - Easing.outExpo(i - 1, 0, self.img_scale_modifier - 0.15, 20)
         end
         self.images = {
          ["ground"] =    {atlas = "images/inventoryimages.xml", tex = "turf_grass.tex"},
@@ -182,6 +182,7 @@ function PingImageManager:AddIndicatorBackgroundAndText(source,img_widget,ping_t
 end
 
 function PingImageManager:UpdateIndicators()
+    local widget_scale = self.img_scale_modifier - Easing.outExpo(TheCamera.distance-15, 0, self.img_scale_modifier - 0.50, 30)
    for source,data in pairs(self.indicators) do
       local target = data.target
       if target and target:IsValid() and not target:HasTag("INLIMBO") then
@@ -200,6 +201,7 @@ function PingImageManager:UpdateIndicators()
                 self:DoOffscreenIndicator(data.widget,data.pos,screen_x,screen_z)
             else
                 data.widget:SetPosition(pos_x,pos_y)
+                data.widget:SetScale(widget_scale)
             end
       end
       if self.owner and self.owner:IsValid() then

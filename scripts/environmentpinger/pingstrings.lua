@@ -53,6 +53,7 @@ local strings = {
         "Check your maps here!",
         "Look at the map position!",
         "Look at your maps!",
+        "New point of interest added to the map!"
     },
     
     other = {
@@ -77,11 +78,57 @@ local strings = {
         molehill = {
             "%S here! I bet it's hiding precious minerals and trinkets.",
         },
-        warly = {
-            "The master chef %S is here!",
+        wilson = {
+            "I see %S looking for a base.", -- Yes, don't judge me.
+            "Mad scientist %S is here.",
+        },
+        willow = {
+            "The master of flames %S is here!",
+        },
+        wolfgang = {
+            "The muscleman %S is here.",
+        },
+        wendy = {
+            "The ectoherbologist %S, I wonder if she has any potions.",
+        },
+        wx78 = {
+            "The robot %S, are your gears running well?",
+        },
+        wickerbottom = {
+            "Librarian %S is here!",   
+        },
+        woodie = {
+            "I see lumberjack %S.",  
+        },
+        wes = {
+            "As silent as he is deadly, %S is here."  
+        },
+        waxwell = {
+            "Shadow pupeteer %S is here!",   
         },
         wathgrithr = {
             "The mighty warrior %S is here!",
+        },
+        warly = {
+            "The master chef %S is here!",
+        },
+        webber = {
+            "The spider child %S is here!",  
+        },
+        wormwood = {
+            "The plant friend %S is here!",   
+        },
+        winona = {
+            "Factory worker %S is here!",  
+        },
+        wortox = {
+            "The mischievous imp %S is travelling here!",  
+        },
+        wurt = {
+            "Mermfolk %S is here.",  
+        },
+        walter = {
+            "The fearless Pinetree Pioneer %S is here.",  
         },
     },
 }
