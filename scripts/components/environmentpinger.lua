@@ -59,6 +59,13 @@ function EnvironmentPinger:AddIndicator(source,ping_type,pos,colour)
     self.pingimagemanager:AddIndicator(source,ping_type,pos,colour)
 end
 
+function EnvironmentPinger:MoveWaypointToPos(pos)
+    if not self.pingimagemanager and self.owner.HUD then
+        self.pingimagemanager = self.owner.HUD:AddChild(PingImageManager(self.owner))
+    end
+    self.pingimagemanager:MoveWaypointToPos(pos)
+end
+
 function EnvironmentPinger:SetIndicatorsToMapPositions(bool,map)
     if not self.pingimagemanager and self.owner.HUD then
         self.pingimagemanager = self.owner.HUD:AddChild(PingImageManager(self.owner))

@@ -62,6 +62,14 @@ local function ping_other_fn(act)
     end
 end
 
+local function MoveWaypointToMousePos()
+    if _G.ThePlayer and _G.ThePlayer.components.environmentpinger then
+        local pos = TheInput:GetWorldPosition()
+       _G.ThePlayer.components.environmentpinger:MoveWaypointToPos(pos)
+    end
+end
+
+
 
 AddAction(ping_ground_name,"Ping ground",ping_ground_fn)
 AddAction(ping_item_name,"Ping item",ping_item_fn)
@@ -133,6 +141,11 @@ local function PlayerControllerPostInit(playercontroller,player)
            rmb.action.fn(rmb)
            return
        end
+       if (not down) and ping_key ~= 0 and TheInput:IsKeyDown(ping_key) then
+            if not (tostring(_G.TheFrontEnd:GetActiveScreen()) == "MapScreen") then -- Handled elsewhere.
+                MoveWaypointToMousePos() 
+            end
+       end
        old_OnRightClick(self,down, ...)
     end
     
@@ -184,13 +197,19 @@ local function MapScreenPostInit(self)
     local old_OnControl = self.OnControl
     
     self.OnControl = function(self,control,down)
-        if (not down) and (control == 29) and TheInput:IsKeyDown(ping_key) then -- 29 = CONTROL_ACCEPT = Leftclick on the map
+        if (not down) and (control == 29 or control == 1) and TheInput:IsKeyDown(ping_key) then
+             -- CONTROL_ACCEPT = 29 = Leftclick on the map. It's also the [Enter] key.
+             -- CONTROL_SECONDARY = 1 = Rightclick on the map
             if _G.ThePlayer.components.environmentpinger then
                 local pos = TheInput:GetScreenPosition()
                 local widget_pos = self:ScreenPosToWidgetPos(pos)
                 local world_pos = self:WidgetPosToMapPos(widget_pos)
                 local x,y,z = self.minimap:MapPosToWorldPos(world_pos.x,world_pos.y,world_pos.z)
-                _G.ThePlayer.components.environmentpinger:Ping("map",{position = {x = x, z = y}})
+                if control == 29 then
+                    _G.ThePlayer.components.environmentpinger:Ping("map",{position = {x = x, z = y}})
+                else
+                    _G.ThePlayer.components.environmentpinger:MoveWaypointToPos({x = x, y = 0, z = y})
+                end
             end
         end
         

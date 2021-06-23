@@ -170,7 +170,7 @@ local keys_and_special = {
     FormatOption("RCtrl",305),
     FormatOption("RAlt",307),
     FormatOption("LAlt",308),
-    FormatOption("--None",0),
+    FormatOption("--None",0), -- Presumably, if you're setting this to none, then you only want to "receive" pings.
 }
 
 configuration_options = {

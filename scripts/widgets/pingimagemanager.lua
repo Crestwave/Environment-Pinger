@@ -18,6 +18,7 @@ local function LoadConfig(name)
 end
 
 local pingsound = LoadConfig("pingsound")
+local ping_key = LoadConfig("ping_key")
 
 local PingImageManager = Class(Widget,function(self,inst)
         screen_x,screen_z = TheSim:GetScreenSize()
@@ -29,7 +30,6 @@ local PingImageManager = Class(Widget,function(self,inst)
         self.mapindicators = nil
         self.map_root = nil
         self.zoomed_scale = {}
-        self.mapicons = {}
         self.img_scale_modifier = 0.75
         for i = 1, 20 do
             self.zoomed_scale[i] = self.img_scale_modifier - Easing.outExpo(i - 1, 0, self.img_scale_modifier - 0.15, 20)
@@ -44,11 +44,37 @@ local PingImageManager = Class(Widget,function(self,inst)
          ["map"] =       {atlas = "images/inventoryimages1.xml",tex = "compass.tex"},
          ["background"] ={atlas = "images/avatars.xml",         tex = "avatar_frame_white.tex"},
         }
+        
+        self.waypoint = self:AddChild(Image(self.images.background.atlas,self.images.background.tex))
+        self.waypoint:SetScale(0) -- Might have the widget appearing before it gets scaled properly.
+        self.waypoint.text = self.waypoint:AddChild(Text(NUMBERFONT,24))
+        self.waypoint.text:SetString("Waypoint")
+        self.waypoint.text_distance = self.waypoint:AddChild(Text(NUMBERFONT,32))
+        self.waypoint.text_distance:SetPosition(0,-64)
+        self.waypoint_index = 1
+        self.waypoint:Hide()
+        self.waypoint_shown = false
         self:Show()
         self:SetClickable(false)
         self:MoveToBack()
         self:StartUpdating()
     end)
+
+function PingImageManager:MoveWaypointToPos(pos)
+    --pos format get in {x = x, y = y, z = z}
+    --pos format to convert to {x,y,z}
+    if not self.indicators[self.waypoint_index] then
+        self.indicators[self.waypoint_index] = {widget = self.waypoint, pos = nil}
+        -- Targets and colours don't matter due to the indicator not being the "sticky" type.
+        if self.map_root then
+            -- Normally the AddIndicator function would add the child, however waypoints is seperated from it.
+            self.map_root:AddChild(self.waypoint)
+        end
+    end
+    local position = pos and {pos.x,pos.y,pos.z} or {0,0,0}
+    self.indicators[self.waypoint_index].pos = position
+    self:UpdateIndicators()
+end
 
 local function WorldPosToScreenPos(x, y)
     local _x,_y,_ = TheWorld.minimap.MiniMap:WorldPosToMapPos(x,y,0)
@@ -61,6 +87,7 @@ function PingImageManager:SetIndicatorsToMapPositions(bool,map)
    self.mapindicators = bool
    if bool and map then
        self.map_root = map:AddChild(Widget("root"))
+       self.map_root:SetClickable(false) -- Don't interfere with clickable widgets on the map.
        for source,data in pairs(self.indicators) do
           self.map_root:AddChild(data.widget) 
        end
@@ -199,7 +226,7 @@ function PingImageManager:UpdateIndicators()
             local pos_x,pos_y = TheSim:GetScreenPos(unpack(data.pos))
             if pos_x > screen_x or pos_x < 0 or pos_y < 0 or pos_y > screen_z then
                 self:DoOffscreenIndicator(data.widget,data.pos,screen_x,screen_z)
-                data.widget:SetScale(widget_scale)
+                data.widget:SetScale(self.img_scale_modifier-0.25)
             else
                 data.widget:SetPosition(pos_x,pos_y)
                 data.widget:SetScale(widget_scale)
@@ -293,6 +320,15 @@ end
 
 function PingImageManager:OnUpdate(dt)
    self:UpdateIndicators()
+   local show_waypoint_condition = ping_key ~= 0 and TheInput:IsKeyDown(ping_key)
+   if not self.waypoint_shown and show_waypoint_condition then
+       -- Only show waypoints if player is holding the ping key.
+       self.waypoint:Show()
+       self.waypoint_shown = true
+   elseif self.waypoint_shown and not show_waypoint_condition then
+       self.waypoint:Hide()
+       self.waypoint_shown = false
+   end
 end
 
 return PingImageManager
