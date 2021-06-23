@@ -142,7 +142,7 @@ local function PlayerControllerPostInit(playercontroller,player)
            return
        end
        if (not down) and ping_key ~= 0 and TheInput:IsKeyDown(ping_key) then
-            if not (tostring(_G.TheFrontEnd:GetActiveScreen()) == "MapScreen") then -- Handled elsewhere.
+            if not (tostring(_G.TheFrontEnd:GetActiveScreen()) == "MapScreen") and not TheInput:GetHUDEntityUnderMouse() then -- Handled elsewhere.
                 MoveWaypointToMousePos() 
             end
        end

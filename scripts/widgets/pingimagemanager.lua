@@ -320,7 +320,8 @@ end
 
 function PingImageManager:OnUpdate(dt)
    self:UpdateIndicators()
-   local show_waypoint_condition = ping_key ~= 0 and TheInput:IsKeyDown(ping_key)
+   local show_waypoint_condition = ping_key ~= 0 and TheInput:IsKeyDown(ping_key) and
+                                    (not self.owner.HUD:HasInputFocus() or self.mapindicators)
    if not self.waypoint_shown and show_waypoint_condition then
        -- Only show waypoints if player is holding the ping key.
        self.waypoint:Show()
