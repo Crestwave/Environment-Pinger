@@ -1,7 +1,7 @@
 name = "Environment Pinger"
 description = "Ping various objects in the environment. See others' ping objects."
 author = "sauktux"
-version = "0.0".."v"
+version = "1.0".."v"
 forumthread = ""
 icon_atlas = "modicon.xml"
 icon = "modicon.tex"
