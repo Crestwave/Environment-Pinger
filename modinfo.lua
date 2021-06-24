@@ -1,5 +1,5 @@
 name = "Environment Pinger"
-description = "Ping various objects in the environment."
+description = "Ping various objects in the environment. See others' ping objects."
 author = "sauktux"
 version = "0.0".."v"
 forumthread = ""
@@ -174,7 +174,7 @@ local keys_and_special = {
 }
 
 configuration_options = {
-	AddOption("ping_key","Ping Hold Key","The key that needs to be held to be able to ping.",keys_and_special,303),
+	AddOption("ping_key","Ping Hold Key","The key that needs to be held to be able to ping.",keys_and_special,118),
     AddOption("whisper_key","Whisper Key","Hold this key to make your ping be whispered.",special_buttons,306),
     AddOption("pingsound","Ping Sound","Should a flare sound be played whenever a ping appears?",bool_opt,true),
 }

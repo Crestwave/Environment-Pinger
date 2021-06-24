@@ -72,12 +72,42 @@ local strings = {
     },
     
     custom = {
+        -- Lists are nice when they are sorted even a bit.
+        -- Mobs and some interactable entities go here:
         mole = {
             "You shouldn't eat precious minerals, %S, it will get you killed.",
+        },
+        monkey = {
+         "%S! Smells like poop.",
         },
         molehill = {
             "%S here! I bet it's hiding precious minerals and trinkets.",
         },
+        lureplant = {
+            "Be careful of the %S here. Don't let the food fool you!",
+        },
+        hound = {
+            "%S, a minion of evil here!",
+        },
+        firehound = {
+            "Watch the fire, %S here!",
+        },
+        icehound = {
+            "Teeths of frost! %S here.",
+        },
+        lavae = {
+            "Stay back from that %S, it's unstable!",
+        },
+        red_mushroom = {
+            "Mushroom.",
+        },
+        blue_mushroom = {
+            "Mushroom.",
+        },
+        green_mushroom = {
+            "Mushroom.",
+        },
+        -- Characters go here:
         wilson = {
             "I see %S looking for a base.", -- Yes, don't judge me.
             "Mad scientist %S is here.",
@@ -129,6 +159,10 @@ local strings = {
         },
         walter = {
             "The fearless Pinetree Pioneer %S is here.",  
+        },
+        -- Items go here:
+        goldnugget = {
+          "%S here. We're rich!",  
         },
     },
 }
