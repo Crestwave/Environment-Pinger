@@ -1,7 +1,7 @@
 local pingstrings = require "environmentpinger/pingstrings"
 local Image = require "widgets/image"
 local PingImageManager = require "widgets/pingimagemanager"
-
+local cooldown_thread = nil
 local function LoadConfig(name)
 	local mod = "Environment Pinger"
 	return GetModConfigData(name,mod) or GetModConfigData(name,KnownModIndex:GetModActualName(mod))
@@ -200,7 +200,17 @@ end
     
 function EnvironmentPinger:Ping(ping_type,act)
     if self.cooldown then return nil end
-    if not self.cooldown then self.cooldown = true self.owner:DoTaskInTime(1,function() self.cooldown = false end) end
+    if not self.cooldown then
+        self.cooldown = true
+        cooldown_thread = StartThread(function()
+                Sleep(1)
+                self.cooldown = false
+                KillThreadsWithID(cooldown_thread.id)
+                cooldown_thread:SetList(nil)
+                cooldown_thread = nil
+            end)
+        cooldown_thread.id = "MOD_ENVIRONMENT_PINGER_THREAD"
+    end
     self:HandlePingType(ping_type,act,TheInput:IsKeyDown(whisper_key))
 end
 
