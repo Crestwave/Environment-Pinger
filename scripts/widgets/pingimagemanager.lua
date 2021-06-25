@@ -94,7 +94,11 @@ function PingImageManager:SetIndicatorsToMapPositions(bool,map)
        local old_OnUpdate = map.OnUpdate
        map.OnUpdate = function(...)
            old_OnUpdate(...)
-           local scale = self.zoomed_scale[TheWorld.minimap.MiniMap:GetZoom()]
+           local zoom = TheWorld.minimap.MiniMap:GetZoom()
+           local scale = self.zoomed_scale[zoom]
+           if not scale then
+               scale = self.img_scale_modifier - Easing.outExpo(zoom - 1, 0, self.img_scale_modifier - 0.15, 20)
+           end
            for source,data in pairs(self.indicators) do
               data.widget:SetScale(scale) 
            end
@@ -195,7 +199,7 @@ function PingImageManager:AddIndicatorBackgroundAndText(source,img_widget,ping_t
         local item_scale_y = item_y/tile_y
         average_scale = (item_scale_x+item_scale_y)/2
         inverse_average_scale = 1/average_scale
-        img_widget:SetScale(inverse_average_scale*self.img_scale_modifier)
+        --img_widget:SetScale(inverse_average_scale*self.img_scale_modifier)
         img_widget.bg:SetScale(average_scale)
     end
     
