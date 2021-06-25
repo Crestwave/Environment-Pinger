@@ -33,6 +33,7 @@ local EnvironmentPinger = Class(function(self,inst)
         self.owner = inst
         current_world = TheWorld and TheWorld:HasTag("cave") and "2" or "1"
         -- 2 - Caves, 1 - Surface
+        self.cooldown = false
     end)
 
 
@@ -198,6 +199,8 @@ function EnvironmentPinger:HandlePingType(ping_type,act,whisper)
 end
     
 function EnvironmentPinger:Ping(ping_type,act)
+    if self.cooldown then return nil end
+    if not self.cooldown then self.cooldown = true self.owner:DoTaskInTime(1,function() self.cooldown = false end) end
     self:HandlePingType(ping_type,act,TheInput:IsKeyDown(whisper_key))
 end
 
