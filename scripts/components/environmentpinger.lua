@@ -93,8 +93,12 @@ function EnvironmentPinger:HandleBaseMessageInformation(act)
     local message = STRINGS.LMB.." "
     local current_world = current_world or "1"
     if target then
-        local display_adjective_fn = target and target.displayadjectivefn
-        local object_name = display_adjective_fn ~= nil and display_adjective_fn().." "..target:GetDisplayName() or target:GetDisplayName()
+        local display_adjective = target and target.displayadjectivefn and target.displayadjectivefn()
+        local base_name = target:GetDisplayName()
+        if base_name == "MISSING NAME" then
+            base_name = target.prefab
+        end
+        local object_name = display_adjective and display_adjective.." "..base_name or base_name
         if self:IsOnFire(target) then
             object_name = "Burning "..object_name
         elseif self:IsBurnt(target) then
