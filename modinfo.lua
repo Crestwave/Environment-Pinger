@@ -172,9 +172,14 @@ local keys_and_special = {
     FormatOption("LAlt",308),
     FormatOption("--None",0), -- Presumably, if you're setting this to none, then you only want to "receive" pings.
 }
+local ping_times = {}
+for i = 10,60,5 do
+   ping_times[(i-5)/5] = FormatOption(i.."s",i)
+end
 
 configuration_options = {
 	AddOption("ping_key","Ping Hold Key","The key that needs to be held to be able to ping.",keys_and_special,118),
     AddOption("whisper_key","Whisper Key","Hold this key to make your ping be whispered.",special_buttons,306),
     AddOption("pingsound","Ping Sound","Should a flare sound be played whenever a ping appears?",bool_opt,true),
+    AddOption("pingtime","Ping Time","How long should the pings last locally?",ping_times,20),
 }

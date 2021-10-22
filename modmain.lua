@@ -159,12 +159,12 @@ local function PlayerPostInit(player)
         if not player.components.environmentpinger then
             player:AddComponent("environmentpinger")
         end
-        if player.HUD then
-            local networkchatqueue = player.HUD.controls.networkchatqueue
-            local old_OnMessageReceived = networkchatqueue.OnMessageReceived
-            networkchatqueue.OnMessageReceived = function(...)
+        if _G.ChatHistory then
+            local ChatHistory = _G.ChatHistory
+            local old_OnSay = ChatHistory.OnSay
+            ChatHistory.OnSay = function(...)
                 player.components.environmentpinger:OnMessageReceived(...)
-                old_OnMessageReceived(...)
+                old_OnSay(...)
             end
         end
     end)

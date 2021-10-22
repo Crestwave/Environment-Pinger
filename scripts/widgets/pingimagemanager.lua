@@ -19,6 +19,7 @@ end
 
 local pingsound = LoadConfig("pingsound")
 local ping_key = LoadConfig("ping_key")
+local pingtime = LoadConfig("pingtime")
 
 local PingImageManager = Class(Widget,function(self,inst)
         screen_x,screen_z = TheSim:GetScreenSize()
@@ -56,7 +57,7 @@ local PingImageManager = Class(Widget,function(self,inst)
         self.waypoint_shown = false
         self:Show()
         self:SetClickable(false)
-        self:MoveToBack()
+
         self:StartUpdating()
     end)
 
@@ -117,7 +118,10 @@ function PingImageManager:KillIndicator(source)
         end
        self.indicators[source].widget:Kill()
        if self.tasks[source] then
-          self.tasks[source]:Cancel()
+          --self.tasks[source]:Cancel()
+          --self.tasks[source] = nil
+          KillThreadsWithID(self.tasks[source].id)
+          self.tasks[source]:SetList(nil)
           self.tasks[source] = nil
        end
        if self.indicators[source].target then
@@ -180,7 +184,9 @@ function PingImageManager:AddIndicator(source,ping_type,position,colour)
     if self.map_root then
        self.map_root:AddChild(img_widget) 
     end
-    self.tasks[source] = self.owner:DoTaskInTime(20,function() self:KillIndicator(source) end)
+    self.tasks[source] = StartThread(function() Sleep(pingtime) self:KillIndicator(source) end)
+    self.tasks[source].id = source
+    --self.owner:DoTaskInTime(20,function() self:KillIndicator(source) end)
     self:UpdateIndicators()
 end
 

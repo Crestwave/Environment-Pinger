@@ -37,13 +37,13 @@ local EnvironmentPinger = Class(function(self,inst)
     end)
 
 
-function EnvironmentPinger:OnMessageReceived(chatqueue,name,prefab,message,colour,whisper,profileflair)
-    if string.match(message,STRINGS.LMB.." .+\n{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} %S+") then
-       local pos_str = string.match(message,STRINGS.LMB.." .+\n{([-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+)} %S+")
+function EnvironmentPinger:OnMessageReceived(chathistory,guid,userid, netid, name, prefab, message, colour, whisper, isemote, user_vanity)
+    if string.match(message,STRINGS.LMB.." .+"..STRINGS.RMB.."{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} %S+") then
+       local pos_str = string.match(message,STRINGS.LMB.." .+"..STRINGS.RMB.."{([-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+)} %S+")
        local pos_x = tonumber(string.match(pos_str,"(.+),"))
        local pos_z = tonumber(string.match(pos_str,",(.+)"))
-       local ping_type = string.match(message,STRINGS.LMB.." .+\n{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} (%S+)")
-       local world = string.match(message,STRINGS.LMB.." .+\n{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} %S+ (%d)")
+       local ping_type = string.match(message,STRINGS.LMB.." .+"..STRINGS.RMB.."{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} (%S+)")
+       local world = string.match(message,STRINGS.LMB.." .+"..STRINGS.RMB.."{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} %S+ (%d)")
        -- Assuming coordinates are 3 digit numbers, I am using 26~ characters worth of data.
        -- I could grab the session id, but that is 15 characters of data, which is way too much
        if world and not (current_world == world) then return nil end -- Different world means different ping meaning.
@@ -89,7 +89,7 @@ end
 function EnvironmentPinger:HandleBaseMessageInformation(act)
     local target = act.target
     local pos = target and target:GetPosition() or act.position or TheInput:GetWorldPosition()
-    local pos_message = pos and "\n{"..string.format("%.3f",pos.x)..","..string.format("%.3f",pos.z).."}" or ""
+    local pos_message = pos and STRINGS.RMB.."{"..string.format("%.3f",pos.x)..","..string.format("%.3f",pos.z).."}" or ""
     local message = STRINGS.LMB.." "
     local current_world = current_world or "1"
     if target then
