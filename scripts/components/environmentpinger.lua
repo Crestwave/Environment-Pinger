@@ -1,6 +1,7 @@
 local pingstrings = require "environmentpinger/pingstrings"
 local Image = require "widgets/image"
 local PingImageManager = require "widgets/pingimagemanager"
+local Encryptor = require "environmentpinger/encryptor"
 local cooldown_thread = nil
 local function LoadConfig(name)
 	local mod = "Environment Pinger"
@@ -28,24 +29,27 @@ local function SumTables(table_1,table_2)
 end
 
 local current_world
-
+local cipher = nil
 local EnvironmentPinger = Class(function(self,inst)
         self.owner = inst
-        current_world = TheWorld and TheWorld:HasTag("cave") and "2" or "1"
-        -- 2 - Caves, 1 - Surface
+        current_world = TheWorld and TheNet:GetSessionIdentifier()
+        cipher = TheWorld and string.sub(Encryptor.toBits(TheWorld.meta.seed),1,8)
         self.cooldown = false
     end)
 
 
 function EnvironmentPinger:OnMessageReceived(chathistory,guid,userid, netid, name, prefab, message, colour, whisper, isemote, user_vanity)
-    if string.match(message,STRINGS.LMB.." .+"..STRINGS.RMB.."{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} %S+") then
-       local pos_str = string.match(message,STRINGS.LMB.." .+"..STRINGS.RMB.."{([-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+)} %S+")
+    local base_pattern = STRINGS.LMB..".+"..STRINGS.RMB
+    if string.match(message,base_pattern..".+") then
+        message = string.match(message,base_pattern)..Encryptor.E(string.match(message,base_pattern.."(%S+)"),cipher)
+    end
+    if string.match(message,base_pattern.." {[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} %S+ %S+") then
+       local pos_str = string.match(message,base_pattern.." {([-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+)} %S+")
        local pos_x = tonumber(string.match(pos_str,"(.+),"))
        local pos_z = tonumber(string.match(pos_str,",(.+)"))
-       local ping_type = string.match(message,STRINGS.LMB.." .+"..STRINGS.RMB.."{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} (%S+)")
-       local world = string.match(message,STRINGS.LMB.." .+"..STRINGS.RMB.."{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} %S+ (%d)")
-       -- Assuming coordinates are 3 digit numbers, I am using 26~ characters worth of data.
-       -- I could grab the session id, but that is 15 characters of data, which is way too much
+       local ping_type = string.match(message,base_pattern.." {[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} (%S+)")
+       local world = string.match(message,base_pattern.." {[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} %S+ (%S+)")
+       -- As the world identifier, let us use the session id.
        if world and not (current_world == world) then return nil end -- Different world means different ping meaning.
        if EnvironmentPinger:IsValidPingType(ping_type) then
            self:AddIndicator(name,ping_type,{x = pos_x,y = 0,z = pos_z},colour)
@@ -57,7 +61,9 @@ function EnvironmentPinger:AddIndicator(source,ping_type,pos,colour)
     if not self.pingimagemanager and self.owner.HUD then
         self.pingimagemanager = self.owner.HUD:AddChild(PingImageManager(self.owner))
     end
-    self.pingimagemanager:AddIndicator(source,ping_type,pos,colour)
+    if self.pingimagemanager then
+        self.pingimagemanager:AddIndicator(source,ping_type,pos,colour)
+    end
 end
 
 function EnvironmentPinger:MoveWaypointToPos(pos)
@@ -86,12 +92,15 @@ function EnvironmentPinger:IsBurnt(object)
     return object:HasTag("burnt")
 end
 
-function EnvironmentPinger:HandleBaseMessageInformation(act)
+function EnvironmentPinger:HandleBaseMessageInformation(act,message_type)
     local target = act.target
     local pos = target and target:GetPosition() or act.position or TheInput:GetWorldPosition()
-    local pos_message = pos and STRINGS.RMB.."{"..string.format("%.3f",pos.x)..","..string.format("%.3f",pos.z).."}" or ""
+    local pos_message = pos and "{"..string.format("%.3f",pos.x)..","..string.format("%.3f",pos.z).."}" or ""
+    local message_type_data = message_type or ""
+    local current_world_data = current_world or tostring(TheNet:GetSessionIdentifier())
     local message = STRINGS.LMB.." "
-    local current_world = current_world or "1"
+    local data_message = string.format(" %s %s %s",pos_message,message_type_data,current_world_data)
+    data_message = STRINGS.RMB..Encryptor.E(data_message,cipher)
     if target then
         local display_adjective = target and target.displayadjectivefn and target.displayadjectivefn()
         local base_name = target:GetDisplayName()
@@ -110,22 +119,34 @@ function EnvironmentPinger:HandleBaseMessageInformation(act)
         local item_name_many = cant_be_pluralized and object_name or object_name.."s"
         local article = string.match(object_name,"^[AEIOUaeiou]") and "an" or "a"
         local prefab = target.prefab
-        return message,pos_message,prefab,object_name,stack_size,item_name_many,article,current_world
+        local object_data = {
+            prefab = prefab,
+            object_name = object_name,
+            stack_size = stack_size,
+            item_name_many = item_name_many,
+            article = article,
+        }
+        return message,data_message,object_data
     end
-    return message,pos_message,current_world
+    return message,data_message
 end
 
 local ping_types = {
-    ["ground"] = function(act,whisper)
-        local message,pos_message,current_world = EnvironmentPinger:HandleBaseMessageInformation(act)
+    ["ground"] = function(act,whisper,ping_type)
+        local message,data_message = EnvironmentPinger:HandleBaseMessageInformation(act,"ground",ping_type)
         local ground_messages = pingstrings.ground
         local r_message = ground_messages[math.random(#ground_messages)]
-        TheNet:Say(message..r_message..pos_message.." ground".." "..current_world,whisper)
+        TheNet:Say(message..r_message..data_message,whisper)
     end,
-    ["item"] = function(act,whisper)
-        local message,pos_message,prefab,
-              object_name,stack_size,item_name_many,
-              article,current_world = EnvironmentPinger:HandleBaseMessageInformation(act)
+    ["item"] = function(act,whisper,ping_type)
+        local message,data_message,object_data = EnvironmentPinger:HandleBaseMessageInformation(act,ping_type)
+        --Unpack data into local variables
+        local prefab = object_data.prefab
+        local object_name = object_data.object_name
+        local stack_size = object_data.stack_size
+        local item_name_many = object_data.item_name_many
+        local article = object_data.article
+        
         local item_messages = SumTables(pingstrings.item,pingstrings.custom[prefab])
         local r_message = item_messages[math.random(#item_messages)]
         if stack_size > 1 then
@@ -140,57 +161,69 @@ local ping_types = {
         r_message = string.gsub(r_message,"a/an",article)
         -- Kinda feels ugly with the amount of times I change the variable.
         -- Might there be a better method for gsubing all of that?
-        TheNet:Say(message..r_message..pos_message.." item".." "..current_world,whisper)
+        TheNet:Say(message..r_message..data_message,whisper)
     end,
     
-    ["structure"] = function(act,whisper)
-        local message,pos_message,prefab,
-              object_name,stack_size,item_name_many,
-              article,current_world = EnvironmentPinger:HandleBaseMessageInformation(act)
+    ["structure"] = function(act,whisper,ping_type)
+        local message,data_message,object_data = EnvironmentPinger:HandleBaseMessageInformation(act,ping_type)
+        --Unpack object data into local variables
+        local prefab = object_data.prefab
+        local object_name = object_data.object_name
+        local article = object_data.article
+        
         local structure_messages = SumTables(pingstrings.structure,pingstrings.custom[prefab])
         local r_message = structure_messages[math.random(#structure_messages)]
         r_message = string.gsub(r_message,"%%S",object_name)
         r_message = string.gsub(r_message,"a/an",article)
-        TheNet:Say(message..r_message..pos_message.." structure".." "..current_world,whisper)
+        TheNet:Say(message..r_message..data_message,whisper)
     end,
     
-    ["mob"] = function(act,whisper)
-        local message,pos_message,prefab,
-              object_name,stack_size,item_name_many,
-              article,current_world = EnvironmentPinger:HandleBaseMessageInformation(act)
+    ["mob"] = function(act,whisper,ping_type)
+        local message,data_message,object_data = EnvironmentPinger:HandleBaseMessageInformation(act,ping_type)
+        --Unpack object data into local variables
+        local prefab = object_data.prefab
+        local object_name = object_data.object_name
+        local article = object_data.article
+        
         local mob_messages = SumTables(pingstrings.mob,pingstrings.custom[prefab])
         local r_message = mob_messages[math.random(#mob_messages)]
         r_message = string.gsub(r_message,"%%S",object_name)
         r_message = string.gsub(r_message,"a/an",article)
-        TheNet:Say(message..r_message..pos_message.." mob".." "..current_world,whisper)
+        TheNet:Say(message..r_message..data_message,whisper)
     end,
     
-    ["boss"] = function(act,whisper)
-        local message,pos_message,prefab,
-              object_name,stack_size,item_name_many,
-              article,current_world = EnvironmentPinger:HandleBaseMessageInformation(act)
+    ["boss"] = function(act,whisper,ping_type)
+        local message,data_message,object_data = EnvironmentPinger:HandleBaseMessageInformation(act,ping_type)
+        --Unpack object data into local variables
+        local prefab = object_data.prefab
+        local object_name = object_data.object_name
+        local article = object_data.article
+        
         local boss_messages = SumTables(pingstrings.boss,pingstrings.custom[prefab])
         local r_message = boss_messages[math.random(#boss_messages)]
         r_message = string.gsub(r_message,"%%S",object_name)
         r_message = string.gsub(r_message,"a/an",article)
-        TheNet:Say(message..r_message..pos_message.." boss".." "..current_world,whisper)
+        TheNet:Say(message..r_message..data_message,whisper)
     end,
     
-    ["map"] = function(act,whisper)
-        local message,pos_message,current_world = EnvironmentPinger:HandleBaseMessageInformation(act)
+    ["map"] = function(act,whisper,ping_type)
+        local message,data_message = EnvironmentPinger:HandleBaseMessageInformation(act,ping_type)
         local map_messages = pingstrings.map
         local r_message = map_messages[math.random(#map_messages)]
-        TheNet:Say(message..r_message..pos_message.." map".." "..current_world,whisper)
+        TheNet:Say(message..r_message..data_message,whisper)
     end,
-    ["other"] = function(act,whisper)
-        local message,pos_message,prefab,
-              object_name,stack_size,item_name_many,
-              article,current_world = EnvironmentPinger:HandleBaseMessageInformation(act)
+    ["other"] = function(act,whisper,ping_type)
+        local message,data_message,object_data = EnvironmentPinger:HandleBaseMessageInformation(act,ping_type)
+        --Unpack object data into local variables
+        local prefab = object_data.prefab
+        local object_name = object_data.object_name
+        local article = object_data.article
+        
         local other_messages = SumTables(pingstrings.other,pingstrings.custom[prefab])
         local r_message = other_messages[math.random(#other_messages)]
         r_message = string.gsub(r_message,"%%S",object_name)
         r_message = string.gsub(r_message,"a/an",article)
-        TheNet:Say(message..r_message..pos_message.." other".." "..current_world,whisper)
+        TheNet:Say(message..r_message..data_message,whisper)
     end,
 }
 
@@ -199,7 +232,7 @@ function EnvironmentPinger:IsValidPingType(ping_type)
 end
 
 function EnvironmentPinger:HandlePingType(ping_type,act,whisper)
-    return ping_types[ping_type] ~= nil and ping_types[ping_type](act,whisper)
+    return ping_types[ping_type] ~= nil and ping_types[ping_type](act,whisper,ping_type)
 end
     
 function EnvironmentPinger:Ping(ping_type,act)

@@ -175,7 +175,7 @@ function PingImageManager:AddIndicator(source,ping_type,position,colour)
     img_widget:SetScale(self.img_scale_modifier)
     self:AddIndicatorBackgroundAndText(source,img_widget,ping_type,colour)
     local target
-    local entities = TheSim:FindEntities(position[1],position[2],position[3],1,{},{"INLIMBO"},{"epic","_inventoryitem","structure","_health"})
+    local entities = TheSim:FindEntities(position[1],position[2],position[3],1,{},{"INLIMBO","fx"},{"epic","_inventoryitem","structure","_health"})
     target = target_pingtypes[ping_type] and entities[1]
     self:RemoveIndicatorWithTarget(target)
     self.indicators[source] = {widget = img_widget, pos = position, target = target, colour = colour}

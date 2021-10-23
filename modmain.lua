@@ -150,7 +150,7 @@ local function PlayerControllerPostInit(playercontroller,player)
     end
     
 end
-
+local old_OnSay
 local function PlayerPostInit(player)
     player:DoTaskInTime(0,function()
         if player ~= _G.ThePlayer then
@@ -159,9 +159,15 @@ local function PlayerPostInit(player)
         if not player.components.environmentpinger then
             player:AddComponent("environmentpinger")
         end
+        if old_OnSay and _G.ChatHistory then
+            -- If we don't remove it: It stacks AND references stale components
+            -- You NEVER want to reference stale components.
+            -- Stale reference can lead to BAD things.
+            _G.ChatHistory.OnSay = old_OnSay
+        end
         if _G.ChatHistory then
             local ChatHistory = _G.ChatHistory
-            local old_OnSay = ChatHistory.OnSay
+            old_OnSay = ChatHistory.OnSay
             ChatHistory.OnSay = function(...)
                 player.components.environmentpinger:OnMessageReceived(...)
                 old_OnSay(...)
