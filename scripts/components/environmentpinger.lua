@@ -8,6 +8,7 @@ local function LoadConfig(name)
 	return GetModConfigData(name,mod) or GetModConfigData(name,KnownModIndex:GetModActualName(mod))
 end
 local whisper_key = LoadConfig("whisper_key")
+local encryptdata = LoadConfig("encryptdata")
 
 local function SumTables(table_1,table_2)
     local new_table = {}
@@ -40,10 +41,11 @@ local EnvironmentPinger = Class(function(self,inst)
 
 function EnvironmentPinger:OnMessageReceived(chathistory,guid,userid, netid, name, prefab, message, colour, whisper, isemote, user_vanity)
     local base_pattern = STRINGS.LMB..".+"..STRINGS.RMB
-    if string.match(message,base_pattern..".+") then
+    local data_pattern = base_pattern.." {[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} %S+ %S+"
+    if (not string.match(message,data_pattern)) and string.match(message,base_pattern..".+") then
         message = string.match(message,base_pattern)..Encryptor.E(string.match(message,base_pattern.."(%S+)"),cipher)
     end
-    if string.match(message,base_pattern.." {[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} %S+ %S+") then
+    if string.match(message,data_pattern) then
        local pos_str = string.match(message,base_pattern.." {([-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+)} %S+")
        local pos_x = tonumber(string.match(pos_str,"(.+),"))
        local pos_z = tonumber(string.match(pos_str,",(.+)"))
@@ -100,7 +102,11 @@ function EnvironmentPinger:HandleBaseMessageInformation(act,message_type)
     local current_world_data = current_world or tostring(TheNet:GetSessionIdentifier())
     local message = STRINGS.LMB.." "
     local data_message = string.format(" %s %s %s",pos_message,message_type_data,current_world_data)
-    data_message = STRINGS.RMB..Encryptor.E(data_message,cipher)
+    if encryptdata then
+        data_message = STRINGS.RMB..Encryptor.E(data_message,cipher)
+    else
+        data_message = STRINGS.RMB..data_message
+    end
     if target then
         local display_adjective = target and target.displayadjectivefn and target.displayadjectivefn()
         local base_name = target:GetDisplayName()

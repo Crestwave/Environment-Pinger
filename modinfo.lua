@@ -182,4 +182,5 @@ configuration_options = {
     AddOption("whisper_key","Whisper Key","Hold this key to make your ping be whispered.",special_buttons,306),
     AddOption("pingsound","Ping Sound","Should a flare sound be played whenever a ping appears?",bool_opt,true),
     AddOption("pingtime","Ping Time","How long should the pings last locally?",ping_times,20),
+    AddOption("encryptdata","Encrypt Data","Should the data part of the message be encrypted?",bool_opt,false),
 }
