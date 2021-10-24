@@ -40,17 +40,17 @@ local EnvironmentPinger = Class(function(self,inst)
 
 
 function EnvironmentPinger:OnMessageReceived(chathistory,guid,userid, netid, name, prefab, message, colour, whisper, isemote, user_vanity)
-    local base_pattern = STRINGS.LMB..".+"..STRINGS.RMB
-    local data_pattern = base_pattern.." {[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} %S+ %S+"
+    local base_pattern = STRINGS.LMB..".+"..STRINGS.RMB.." "
+    local data_pattern = base_pattern.."{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} %S+ %S+"
     if (not string.match(message,data_pattern)) and string.match(message,base_pattern..".+") then
-        message = string.match(message,base_pattern)..Encryptor.E(string.match(message,base_pattern.."(%S+)"),cipher)
+        message = string.match(message,base_pattern)..Encryptor.E(string.match(message,base_pattern.."(%S+)") or "",cipher)
     end
     if string.match(message,data_pattern) then
-       local pos_str = string.match(message,base_pattern.." {([-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+)} %S+")
+       local pos_str = string.match(message,base_pattern.."{([-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+)} %S+")
        local pos_x = tonumber(string.match(pos_str,"(.+),"))
        local pos_z = tonumber(string.match(pos_str,",(.+)"))
-       local ping_type = string.match(message,base_pattern.." {[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} (%S+)")
-       local world = string.match(message,base_pattern.." {[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} %S+ (%S+)")
+       local ping_type = string.match(message,base_pattern.."{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} (%S+)")
+       local world = string.match(message,base_pattern.."{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} %S+ (%S+)")
        -- As the world identifier, let us use the session id.
        if world and not (current_world == world) then return nil end -- Different world means different ping meaning.
        if EnvironmentPinger:IsValidPingType(ping_type) then
@@ -101,11 +101,11 @@ function EnvironmentPinger:HandleBaseMessageInformation(act,message_type)
     local message_type_data = message_type or ""
     local current_world_data = current_world or tostring(TheNet:GetSessionIdentifier())
     local message = STRINGS.LMB.." "
-    local data_message = string.format(" %s %s %s",pos_message,message_type_data,current_world_data)
+    local data_message = string.format("%s %s %s",pos_message,message_type_data,current_world_data)
     if encryptdata then
-        data_message = STRINGS.RMB..Encryptor.E(data_message,cipher)
+        data_message = STRINGS.RMB.." "..Encryptor.E(data_message,cipher)
     else
-        data_message = STRINGS.RMB..data_message
+        data_message = STRINGS.RMB.." "..data_message
     end
     if target then
         local display_adjective = target and target.displayadjectivefn and target.displayadjectivefn()
