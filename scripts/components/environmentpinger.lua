@@ -108,7 +108,7 @@ function EnvironmentPinger:HandleBaseMessageInformation(act,message_type)
         data_message = STRINGS.RMB.." "..data_message
     end
     if target then
-        local display_adjective = target and target.displayadjectivefn and target.displayadjectivefn()
+        local display_adjective = target and target.displayadjectivefn and target.displayadjectivefn(target)
         local base_name = target:GetDisplayName()
         if base_name == "MISSING NAME" then
             base_name = target.prefab
