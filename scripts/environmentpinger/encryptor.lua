@@ -50,8 +50,6 @@ end
 
 
 --Encryption and Decryption Algorithm for XOR
-local min = 32 -- Any characters below 32 seem to just be '?', aka invalid for us
-local max = 255 -- We don't have anything above this
 local function E(str,cipher)
     cipher = cipher or "10010001"
     local byte_list = {}
@@ -65,20 +63,6 @@ local function E(str,cipher)
         local cipher_num = toDec(cipher)
     --Numbers to XOR
         local num_xor = xor(num,cipher_num)
-        
-    -- Get our new encrypted character back!
-    if num_xor > max then
-       num_xor = num_xor%max + min - 1
-    end
-    if num_xor < min then
-       num_xor = num_xor+min-1 
-    end
-    -- Note: This is not a good way to limit encryption to an interval.
-    -- Under normal circumstances, there always exists a cipher such that
-    -- encryption/decryption doesn't work with a specific character.
-    -- However, our cipher is acquired from the world seed
-    -- which only "breaks" characters in the range 128-255. As we don't use those for the
-    -- base encryption, this is fine.
 
        local char = string.char(num_xor)
        table.insert(xor_list,char)
