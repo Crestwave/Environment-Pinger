@@ -222,8 +222,19 @@ local function MapScreenPostInit(self)
         old_OnControl(self,control,down)
     end
 end
+
+local function ChatLinePostInit(self)
+   local old_SetChatData = self.SetChatData
+   self.SetChatData = function(...)
+      old_SetChatData(...)
+      if _G.ThePlayer.components.environmentpinger then
+          _G.ThePlayer.components.environmentpinger:SetClickableMessage(self)
+      end
+   end
+end
 AddComponentPostInit("playeractionpicker",PlayerActionPickerPostInit)
 AddComponentPostInit("playercontroller", PlayerControllerPostInit)
 AddClassPostConstruct("screens/mapscreen", MapScreenPostInit)
+AddClassPostConstruct("widgets/redux/chatline",ChatLinePostInit)
 AddPlayerPostInit(PlayerPostInit)
 

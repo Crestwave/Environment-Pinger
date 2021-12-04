@@ -1,5 +1,6 @@
 local pingstrings = require "environmentpinger/pingstrings"
 local Image = require "widgets/image"
+local ImageButton = require "widgets/imagebutton"
 local PingImageManager = require "widgets/pingimagemanager"
 local Encryptor = require "environmentpinger/encryptor"
 local cooldown_thread = nil
@@ -39,7 +40,39 @@ local EnvironmentPinger = Class(function(self,inst)
     end)
 
 
-function EnvironmentPinger:OnMessageReceived(chathistory,guid,userid, netid, name, prefab, message, colour, whisper, isemote, user_vanity)
+function EnvironmentPinger:SetClickableMessage(chatline)
+    local base_pattern = STRINGS.LMB..".+"..STRINGS.RMB.." "
+    local data_pattern = base_pattern.."{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} %S+ %S+"
+    local message = chatline.message:GetString()
+    local name = chatline.user:GetString()
+    local colour = chatline.user:GetColour()
+    if not (string.match(message,base_pattern..".+") or string.match(message,data_pattern)) then
+        return
+    end
+    local on_click_fn = function()
+        self:OnMessageReceived(nil, nil, nil, nil, name, nil, message, colour, nil, nil, nil,true,true)
+    end
+    if not chatline.message_btn then
+        chatline.message_btn = chatline.root:AddChild(ImageButton())
+        chatline.message_btn.text:SetHAlign(ANCHOR_LEFT)
+        chatline.message_btn:SetFont(TALKINGFONT)
+        chatline.message_btn:SetTextSize(30)
+        chatline.message_btn:SetImageNormalColour(0, 0, 0, 0)
+        chatline.message_btn:SetTextColour(1, 1, 1, 1)
+        chatline.message_btn:SetTextFocusColour(1, 1, 1, 1)
+        chatline.message_btn:SetOnClick(on_click_fn)
+        chatline.message_btn:SetControl(CONTROL_PRIMARY) --mouse left click only!
+        chatline.message_btn:SetText(message)
+        local w1, h1 = chatline.message_btn.text:GetRegionSize()
+        chatline.message_btn:SetPosition(w1 * 0.5 - 290, 0)
+        chatline.message_btn:ForceImageSize(w1,h1)
+        chatline.message_btn:Show()
+    end
+    chatline.message:Hide()
+    -- Why does it have to be so painful to just edit the chat widget?
+end
+
+function EnvironmentPinger:OnMessageReceived(chathistory,guid,userid, netid, name, prefab, message, colour, whisper, isemote, user_vanity, ignore_sound, ignore_mobs)
     local base_pattern = STRINGS.LMB..".+"..STRINGS.RMB.." "
     local data_pattern = base_pattern.."{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} %S+ %S+"
     if (not string.match(message,data_pattern)) and string.match(message,base_pattern..".+") then
@@ -54,17 +87,17 @@ function EnvironmentPinger:OnMessageReceived(chathistory,guid,userid, netid, nam
        -- As the world identifier, let us use the session id.
        if world and not (current_world == world) then return nil end -- Different world means different ping meaning.
        if EnvironmentPinger:IsValidPingType(ping_type) then
-           self:AddIndicator(name,ping_type,{x = pos_x,y = 0,z = pos_z},colour)
+           self:AddIndicator(name,ping_type,{x = pos_x,y = 0,z = pos_z},colour,ignore_sound,ignore_mobs)
        end
     end
 end
 
-function EnvironmentPinger:AddIndicator(source,ping_type,pos,colour)
+function EnvironmentPinger:AddIndicator(source,ping_type,pos,colour,ignore_sound,ignore_mobs)
     if not self.pingimagemanager and self.owner.HUD then
         self.pingimagemanager = self.owner.HUD:AddChild(PingImageManager(self.owner))
     end
     if self.pingimagemanager then
-        self.pingimagemanager:AddIndicator(source,ping_type,pos,colour)
+        self.pingimagemanager:AddIndicator(source,ping_type,pos,colour,ignore_sound,ignore_mobs)
     end
 end
 

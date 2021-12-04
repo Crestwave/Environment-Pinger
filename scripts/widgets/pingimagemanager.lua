@@ -166,7 +166,7 @@ local target_pingtypes = {
     ["map"] = false,
 }
 
-function PingImageManager:AddIndicator(source,ping_type,position,colour)
+function PingImageManager:AddIndicator(source,ping_type,position,colour,ignore_sound,ignore_mobs)
     self:KillIndicator(source)
     position = position and position.x and {position.x,position.y,position.z} or {0,0,0}
     local img = self.images[ping_type]
@@ -176,10 +176,14 @@ function PingImageManager:AddIndicator(source,ping_type,position,colour)
     self:AddIndicatorBackgroundAndText(source,img_widget,ping_type,colour)
     local target
     local entities = TheSim:FindEntities(position[1],position[2],position[3],1,{},{"INLIMBO","fx"},{"epic","_inventoryitem","structure","_health"})
-    target = target_pingtypes[ping_type] and entities[1]
+    if not ignore_mobs then
+        target = target_pingtypes[ping_type] and entities[1]
+    end
     self:RemoveIndicatorWithTarget(target)
     self.indicators[source] = {widget = img_widget, pos = position, target = target, colour = colour}
-    self:PlayVolumeScaledSound(position,"turnoftides/common/together/miniflare/explode")
+    if not ignore_sound then
+        self:PlayVolumeScaledSound(position,"turnoftides/common/together/miniflare/explode")
+    end
     
     if self.map_root then
        self.map_root:AddChild(img_widget) 
