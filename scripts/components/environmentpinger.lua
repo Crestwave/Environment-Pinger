@@ -46,11 +46,24 @@ function EnvironmentPinger:SetClickableMessage(chatline)
     local message = chatline.message:GetString()
     local name = chatline.user:GetString()
     local colour = chatline.user:GetColour()
-    if not (string.match(message,base_pattern..".+") or string.match(message,data_pattern)) then
-        return
-    end
+    local is_message_ping = string.match(message,base_pattern..".+") or string.match(message,data_pattern)
     local on_click_fn = function()
         self:OnMessageReceived(nil, nil, nil, nil, name, nil, message, colour, nil, nil, nil,true,true)
+    end
+    if chatline.message_btn then
+        chatline.message_btn:SetText(message)
+        chatline.message_btn:SetOnClick(on_click_fn)
+        if not is_message_ping then
+            chatline.message_btn:Hide()
+        else
+            chatline.message_btn:Show()
+            local w1, h1 = chatline.message_btn.text:GetRegionSize()
+            chatline.message_btn:SetPosition(w1 * 0.5 - 290, 0)
+            chatline.message:Hide()
+        end
+    end
+    if not is_message_ping then
+        return
     end
     if not chatline.message_btn then
         chatline.message_btn = chatline.root:AddChild(ImageButton())
