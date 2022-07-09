@@ -35,7 +35,7 @@ local cipher = nil
 local EnvironmentPinger = Class(function(self,inst)
         self.owner = inst
         current_world = TheWorld and TheNet:GetSessionIdentifier()
-        cipher = TheWorld and string.sub(Encryptor.toBits(TheWorld.meta.seed),1,8)
+        cipher = tostring(Encryptor.HashString(current_world,8))
         self.cooldown = false
     end)
 

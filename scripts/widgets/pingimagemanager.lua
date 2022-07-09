@@ -94,7 +94,6 @@ function PingImageManager:SetIndicatorsToMapPositions(bool,map)
        end
        local old_OnUpdate = map.OnUpdate
        map.OnUpdate = function(...)
-           old_OnUpdate(...)
            local zoom = TheWorld.minimap.MiniMap:GetZoom()
            local scale = self.zoomed_scale[zoom]
            if not scale then
@@ -103,6 +102,7 @@ function PingImageManager:SetIndicatorsToMapPositions(bool,map)
            for source,data in pairs(self.indicators) do
               data.widget:SetScale(scale) 
            end
+           old_OnUpdate(...)
        end
    elseif self.map_root then
         for source,data in pairs(self.indicators) do

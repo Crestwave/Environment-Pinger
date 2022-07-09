@@ -4,6 +4,22 @@
 -- We can count up to 256
 -- Valid interval: (32;255]
 
+local function HashString(s,hash_length)
+    local p1 = 5
+    local p2 = 11
+    local modulus = p1*p2
+    hash_length = hash_length or 8
+    local hash = 10^(hash_length-1)
+    for i = 1, #s do
+        local num = (string.byte(s:sub(i,i))^p1) % modulus
+        hash = hash + num^hash_length
+    end
+    if hash > 10^hash_length or hash < 10^(hash_length-1) then
+        hash = (hash % 10^(hash_length-1) + 10^(hash_length-1))
+    end
+    return hash
+end
+
 local function toBits(num,forced_size)
     local bits_reversed = {}
     
@@ -25,7 +41,7 @@ end
 
 
 local function toDec(bits)
-    
+
     local bit_size = #bits
     local binary_map = {}
     for bin = bit_size-1,0,-1 do
@@ -51,7 +67,7 @@ end
 
 --Encryption and Decryption Algorithm for XOR
 local function E(str,cipher)
-    cipher = cipher or "10010001"
+    cipher = tonumber(cipher) and cipher or "10010001"
     local byte_list = {}
     --Characters to bytes
     for char in str:gmatch(".") do
@@ -74,4 +90,5 @@ return {
     E = E,
     toBits = toBits,
     toDec = toDec,
+    HashString = HashString,
 }
