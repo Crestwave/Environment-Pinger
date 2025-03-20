@@ -106,7 +106,7 @@ function EnvironmentPinger:OnMessageReceived(chathistory,guid,userid, netid, nam
 end
 
 function EnvironmentPinger:AddIndicator(source,ping_type,pos,colour,ignore_sound,ignore_mobs)
-    if not self.pingimagemanager and self.owner.HUD then
+    if not self.pingimagemanager and self.owner:IsValid() and self.owner.HUD then
         self.pingimagemanager = self.owner.HUD:AddChild(PingImageManager(self.owner))
     end
     if self.pingimagemanager then
@@ -115,14 +115,14 @@ function EnvironmentPinger:AddIndicator(source,ping_type,pos,colour,ignore_sound
 end
 
 function EnvironmentPinger:MoveWaypointToPos(pos)
-    if not self.pingimagemanager and self.owner.HUD then
+    if not self.pingimagemanager and self.owner:IsValid() and self.owner.HUD then
         self.pingimagemanager = self.owner.HUD:AddChild(PingImageManager(self.owner))
     end
     self.pingimagemanager:MoveWaypointToPos(pos)
 end
 
 function EnvironmentPinger:SetIndicatorsToMapPositions(bool,map)
-    if not self.pingimagemanager and self.owner.HUD then
+    if not self.pingimagemanager and self.owner:IsValid() and self.owner.HUD then
         self.pingimagemanager = self.owner.HUD:AddChild(PingImageManager(self.owner))
     end
    self.pingimagemanager:SetIndicatorsToMapPositions(bool,map) 
