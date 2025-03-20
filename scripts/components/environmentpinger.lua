@@ -42,7 +42,7 @@ local EnvironmentPinger = Class(function(self,inst)
 
 function EnvironmentPinger:SetClickableMessage(chatline)
     local base_pattern = STRINGS.LMB..".+"..STRINGS.RMB.." "
-    local data_pattern = base_pattern.."{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} %S+ %S+"
+    local data_pattern = base_pattern.."{[-]?%d*%.?%d+,[-]?%d*%.?%d+} %S+ %S+"
     local message = chatline.message:GetString()
     local name = chatline.user:GetString()
     local colour = chatline.user:GetColour()
@@ -87,16 +87,16 @@ end
 
 function EnvironmentPinger:OnMessageReceived(chathistory,guid,userid, netid, name, prefab, message, colour, whisper, isemote, user_vanity, ignore_sound, ignore_mobs)
     local base_pattern = STRINGS.LMB..".+"..STRINGS.RMB.." "
-    local data_pattern = base_pattern.."{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} %S+ %S+"
+    local data_pattern = base_pattern.."{[-]?%d*%.?%d+,[-]?%d*%.?%d+} %S+ %S+"
     if (not string.match(message,data_pattern)) and string.match(message,base_pattern..".+") then
         message = string.match(message,base_pattern)..Encryptor.E(string.match(message,base_pattern.."(%S+)") or "",cipher)
     end
     if string.match(message,data_pattern) then
-       local pos_str = string.match(message,base_pattern.."{([-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+)} %S+")
+       local pos_str = string.match(message,base_pattern.."{([-]?%d*%.?%d+,[-]?%d*%.?%d+)} %S+")
        local pos_x = tonumber(string.match(pos_str,"(.+),"))
        local pos_z = tonumber(string.match(pos_str,",(.+)"))
-       local ping_type = string.match(message,base_pattern.."{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} (%S+)")
-       local world = string.match(message,base_pattern.."{[-]?%d+[%.%d+]+,[-]?%d+[%.%d+]+} %S+ (%S+)")
+       local ping_type = string.match(message,base_pattern.."{[-]?%d*%.?%d+,[-]?%d*%.?%d+} (%S+)")
+       local world = string.match(message,base_pattern.."{[-]?%d*%.?%d+,[-]?%d*%.?%d+} %S+ (%S+)")
        -- As the world identifier, let us use the session id.
        if world and not (current_world == world) then return nil end -- Different world means different ping meaning.
        if EnvironmentPinger:IsValidPingType(ping_type) then
