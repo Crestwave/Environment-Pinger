@@ -5,7 +5,7 @@ local PingImageManager = require "widgets/pingimagemanager"
 local Encryptor = require "environmentpinger/encryptor"
 local cooldown_thread = nil
 local function LoadConfig(name)
-	local mod = "Environment Pinger"
+	local mod = "Environment Pinger [Fixed]"
 	return GetModConfigData(name,mod) or GetModConfigData(name,KnownModIndex:GetModActualName(mod))
 end
 local whisper_key = LoadConfig("whisper_key")

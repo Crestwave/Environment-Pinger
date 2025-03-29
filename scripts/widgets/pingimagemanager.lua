@@ -13,7 +13,7 @@ local half_x, half_z = RESOLUTION_X / 2, RESOLUTION_Y / 2
 
 
 local function LoadConfig(name)
-	local mod = "Environment Pinger"
+	local mod = "Environment Pinger [Fixed]"
 	return GetModConfigData(name,mod) or GetModConfigData(name,KnownModIndex:GetModActualName(mod))
 end
 
