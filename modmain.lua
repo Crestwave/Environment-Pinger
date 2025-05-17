@@ -169,7 +169,9 @@ local function PlayerPostInit(player)
             local ChatHistory = _G.ChatHistory
             old_OnSay = ChatHistory.OnSay
             ChatHistory.OnSay = function(...)
-                player.components.environmentpinger:OnMessageReceived(...)
+                if player:IsValid() then
+                    player.components.environmentpinger:OnMessageReceived(...)
+                end
                 old_OnSay(...)
             end
         end
