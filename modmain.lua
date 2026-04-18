@@ -3,9 +3,9 @@ local _G = GLOBAL
 local require = _G.require
 
 local TheInput = _G.TheInput
-local ACTIONS = _G.ACTIONS
 local BufferedAction = _G.BufferedAction
 
+local actions = {}
 local action_prefix = "MOD_ENVIRONMENT_PINGER_"
 local ping_ground_name = action_prefix.."PING"
 local ping_item_name = action_prefix.."PING_ITEM"
@@ -69,14 +69,22 @@ local function MoveWaypointToMousePos()
     end
 end
 
+local function AddClientAction(id, str, fn)
+        local action = _G.Action()
+        action.id = id
+	action.str = str
+        action.fn = fn
+	actions[id] = action
+	_G.STRINGS.ACTIONS[id] = str
+end
 
-
-AddAction(ping_ground_name,"Ping ground",ping_ground_fn)
-AddAction(ping_item_name,"Ping item",ping_item_fn)
-AddAction(ping_structure_name,"Ping structure",ping_structure_fn)
-AddAction(ping_mob_name,"Ping mob",ping_mob_fn)
-AddAction(ping_boss_name,"Ping boss",ping_boss_fn)
-AddAction(ping_other_name,"Ping",ping_other_fn)
+AddClientAction(ping_ground_name,"Ping ground",ping_ground_fn)
+AddClientAction(ping_item_name,"Ping item",ping_item_fn)
+AddClientAction(ping_structure_name,"Ping structure",ping_structure_fn)
+AddClientAction(ping_mob_name,"Ping mob",ping_mob_fn)
+AddClientAction(ping_boss_name,"Ping boss",ping_boss_fn)
+AddClientAction(ping_other_name,"Ping",ping_other_fn)
+AddClientAction(ping_other_name,"Ping",ping_other_fn)
 -- Check for a fire as a valid sub-type in all ping types.
 -- Or rather, add it as an adjective for the objects.
 -- Could ping sub-types be useful? Eg. Mob dividing into friendly, neutral, agressive, boss?
@@ -97,20 +105,20 @@ local function PlayerActionPickerPostInit(playeractionpicker,player)
                return lmb,rmb
            end
            if not entity_target then --Ping the ground or so
-               lmb = BufferedAction(player,nil,ACTIONS[ping_ground_name])
+               lmb = BufferedAction(player,nil,actions[ping_ground_name])
                return lmb,rmb
            end
            
            if entity_target:HasTag("epic") then
-              lmb = BufferedAction(player,entity_target,ACTIONS[ping_boss_name])
+              lmb = BufferedAction(player,entity_target,actions[ping_boss_name])
           elseif entity_target:HasTag("_inventoryitem") and entity_target.replica.inventoryitem:CanBePickedUp() then
-              lmb = BufferedAction(player,entity_target,ACTIONS[ping_item_name])
+              lmb = BufferedAction(player,entity_target,actions[ping_item_name])
           elseif entity_target:HasTag("structure") or entity_target:HasTag("hammer_WORKABLE") then
-              lmb = BufferedAction(player,entity_target,ACTIONS[ping_structure_name])
+              lmb = BufferedAction(player,entity_target,actions[ping_structure_name])
           elseif entity_target:HasTag("_health") then
-              lmb = BufferedAction(player,entity_target,ACTIONS[ping_mob_name])
+              lmb = BufferedAction(player,entity_target,actions[ping_mob_name])
           else
-              lmb = BufferedAction(player,entity_target,ACTIONS[ping_other_name])
+              lmb = BufferedAction(player,entity_target,actions[ping_other_name])
            end
        end
        return lmb,rmb
@@ -150,6 +158,7 @@ local function PlayerControllerPostInit(playercontroller,player)
     end
     
 end
+
 local old_OnSay
 local function PlayerPostInit(player)
     player:DoTaskInTime(0,function()
